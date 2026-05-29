@@ -1,6 +1,10 @@
 # Biblioteca Digital
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/REEMPLAZAR_USUARIO_Y_REPOSITORIO)
+
 Biblioteca online con frontend HTML/CSS/JS y backend Node.js + Express conectado a MySQL en Aiven mediante SSL.
+
+TODO antes de publicar el README: reemplazar `REEMPLAZAR_USUARIO_Y_REPOSITORIO` por `USUARIO/REPOSITORIO`.
 
 ## Estructura
 
@@ -9,6 +13,7 @@ Biblioteca online con frontend HTML/CSS/JS y backend Node.js + Express conectado
 - `routes/`: rutas `/api/auth`, `/api/books`, `/api/user` y `/api/admin`.
 - `middlewares/auth.js`: validacion JWT y rol administrador.
 - `index.html`, `styles.css`, `script.js`: frontend.
+- No hay carpeta `public/` obligatoria: el servidor sirve `index.html`, `styles.css` y `script.js` desde la raiz.
 - `bd/`: esquema, seed, consultas de prueba y documentacion SQL.
 - `certs/ca.pem`: certificado CA publico para desarrollo local.
 - `railway.json`: configuracion de deploy Railway.
@@ -91,8 +96,15 @@ DB_PORT=21861
 DB_USER=avnadmin
 DB_PASSWORD=REEMPLAZAR_PASSWORD
 DB_NAME=biblioteca_digital
+
+# Local:
 DB_SSL_CA=./certs/ca.pem
+
+# Railway:
+# Pegar el contenido completo del ca.pem como variable en Railway.
+# Si usas DB_SSL_CA_CONTENT, no hace falta DB_SSL_CA.
 DB_SSL_CA_CONTENT=
+
 JWT_SECRET=REEMPLAZAR_JWT_SECRET
 ```
 
@@ -100,27 +112,126 @@ No hardcodear `DB_PASSWORD`, `JWT_SECRET` ni contenido de certificados en el cod
 
 ## Deploy en Railway
 
-1. Subir el repo a GitHub.
-2. Crear un proyecto en Railway.
-3. Elegir `Deploy from GitHub repo`.
-4. Configurar variables.
-5. Deployar.
-6. Probar la URL publica.
+Boton:
 
-Variables Railway:
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/REEMPLAZAR_USUARIO_Y_REPOSITORIO)
+
+TODO antes de usar el boton: reemplazar `REEMPLAZAR_USUARIO_Y_REPOSITORIO` por `USUARIO/REPOSITORIO`.
+
+Alternativa si el boton no funciona: hacer deploy manual desde Railway Dashboard.
+
+### A. Deploy desde GitHub
+
+1. Subir el proyecto a GitHub.
+2. Entrar a Railway.
+3. Crear `New Project`.
+4. Elegir `Deploy from GitHub repo`.
+5. Seleccionar el repositorio.
+6. Esperar el build.
+7. Ir a `Variables`.
+8. Cargar las variables de entorno.
+9. Generar dominio publico en `Settings -> Networking`.
+10. Probar la URL publica.
+
+### B. Variables a configurar en Railway
+
+En Railway -> Service -> Variables agregar:
 
 ```env
+PORT=4000
 NODE_ENV=production
 DB_HOST=bookonline00-114-pmccole14-ecdc.d.aivencloud.com
 DB_PORT=21861
 DB_USER=avnadmin
-DB_PASSWORD=REEMPLAZAR_PASSWORD_REAL
+DB_PASSWORD=CONTRASENA_REAL_DE_AIVEN
 DB_NAME=biblioteca_digital
 DB_SSL_CA_CONTENT=CONTENIDO_COMPLETO_DEL_CA_PEM
-JWT_SECRET=REEMPLAZAR_SECRET_FUERTE
+JWT_SECRET=CLAVE_SECRETA_LARGA
 ```
 
-Railway define `PORT` automaticamente. El servidor usa `process.env.PORT || 4000`.
+Railway tambien define `PORT` automaticamente. Si Railway ya define `PORT`, no hace falta cargarlo manualmente.
+
+Nunca subir `DB_PASSWORD` al codigo. Nunca subir `.env`.
+
+### C. Como cargar DB_SSL_CA_CONTENT
+
+1. Abrir `certs/ca.pem`.
+2. Copiar todo el contenido, incluyendo:
+
+```text
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+```
+
+3. Pegar ese contenido completo en `DB_SSL_CA_CONTENT`.
+
+Si Railway no conserva saltos de linea, se puede pegar igual o reemplazar los saltos por `\n`; `config/db.js` soporta ambas formas.
+
+### D. Comando de inicio
+
+Railway debe usar:
+
+```bash
+npm start
+```
+
+Si Railway no detecta el comando, configurarlo en `Settings -> Deploy -> Start Command` con `npm start`.
+
+### E. Probar deploy
+
+Una vez desplegado, probar:
+
+```text
+https://URL-DE-RAILWAY/api/status
+```
+
+Debe devolver:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+Luego probar:
+
+```text
+https://URL-DE-RAILWAY/api/health/db
+```
+
+Debe devolver:
+
+```json
+{
+  "ok": true,
+  "database": "biblioteca_digital"
+}
+```
+
+### F. Probar la web
+
+Entrar a:
+
+```text
+https://URL-DE-RAILWAY/
+```
+
+Verificar:
+
+- catalogo de libros;
+- login;
+- registro;
+- rutas de usuario;
+- rutas de administrador;
+- compras/alquileres si estan implementados.
+
+`railway.json` ya deja configurado:
+
+- Builder: `NIXPACKS`.
+- Start command: `npm start`.
+- Healthcheck: `/api/status`.
+- Restart policy: `ON_FAILURE`.
 
 ## Base de datos
 

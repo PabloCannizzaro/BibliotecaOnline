@@ -64,6 +64,21 @@ let filterCategory = null;
 let lastSearch = "";
 let currentUser = null;
 
+if (menuToggle && mainNav) {
+  menuToggle.setAttribute("aria-expanded", "false");
+  menuToggle.addEventListener("click", () => {
+    const isOpen = mainNav.classList.toggle("open");
+    menuToggle.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  mainNav.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      mainNav.classList.remove("open");
+      menuToggle.setAttribute("aria-expanded", "false");
+    });
+  });
+}
+
 function getToken() {
   return localStorage.getItem("biblioteca_token");
 }
@@ -237,7 +252,7 @@ async function toggleUserState() {
   guestActions.classList.add("hidden");
   btnLogout.classList.remove("hidden");
   sideUserStatus.textContent = `Sesión activa: ${currentUser.email}`;
-  if (currentUser.role_name === "admin" || currentUser.role_name === "admin") {
+  if (currentUser.role_name === "admin") {
     adminSection.classList.remove("hidden");
     loadAdminDashboard();
   }

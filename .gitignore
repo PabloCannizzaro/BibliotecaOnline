@@ -1,0 +1,21 @@
+.env
+.env.*
+!.env.example
+
+node_modules/
+npm-debug.log
+npm-debug.log*
+*.log
+
+.DS_Store
+Thumbs.db
+
+# Material sensible que no debe versionarse.
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*private*
+service-account*.json
+credentials*.json

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480" role="img" aria-label="Portada indigo">
+  <rect width="360" height="480" rx="28" fill="#1b2e62"/>
+  <path d="M52 390 180 88l128 302z" fill="#7d9dff" opacity=".72"/>
+  <path d="M108 390 180 206l72 184z" fill="#fff" opacity=".28"/>
+  <rect x="58" y="74" width="156" height="18" rx="9" fill="#fff" opacity=".85"/>
+  <rect x="58" y="110" width="220" height="10" rx="5" fill="#fff" opacity=".42"/>
+</svg>

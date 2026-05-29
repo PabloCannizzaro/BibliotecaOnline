@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480" role="img" aria-label="Portada de libro">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#2f6bff"/>
+      <stop offset="1" stop-color="#6a56f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="360" height="480" rx="28" fill="url(#bg)"/>
+  <rect x="38" y="42" width="284" height="396" rx="20" fill="#ffffff" opacity=".13"/>
+  <rect x="70" y="88" width="150" height="14" rx="7" fill="#ffffff" opacity=".75"/>
+  <rect x="70" y="118" width="216" height="10" rx="5" fill="#ffffff" opacity=".38"/>
+  <rect x="70" y="142" width="186" height="10" rx="5" fill="#ffffff" opacity=".38"/>
+  <path d="M92 304c38-33 75-33 112 0 27-30 55-40 84-28v82c-28-12-56-3-84 28-37-33-74-33-112 0-13-12-27-20-42-24v-82c15 4 29 12 42 24z" fill="#ffffff" opacity=".8"/>
+  <rect x="52" y="42" width="16" height="396" rx="8" fill="#10234d" opacity=".28"/>
+</svg>

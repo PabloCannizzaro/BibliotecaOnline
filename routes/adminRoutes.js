@@ -5,19 +5,47 @@ const { authenticate, requireAdmin } = require("../middlewares/auth");
 const router = express.Router();
 router.use(authenticate, requireAdmin);
 
+async function getAdminStats() {
+  const [[stats]] = await pool.query(
+    `SELECT
+      (SELECT COUNT(*) FROM books) AS total_books,
+      (SELECT COUNT(*) FROM books WHERE is_active = 1) AS active_books,
+      (SELECT COUNT(*) FROM users) AS total_users,
+      (SELECT COUNT(*) FROM users WHERE status = 'active' AND role_id != 1) AS active_users,
+      (SELECT COUNT(*) FROM copies WHERE status = 'available') AS available_copies,
+      (SELECT COUNT(*) FROM loans WHERE status = 'active') AS active_loans,
+      (SELECT COUNT(*) FROM loans WHERE status = 'overdue') AS overdue_loans,
+      (SELECT COUNT(*) FROM sales WHERE status = 'completed') AS completed_sales,
+      (SELECT COALESCE(SUM(total_amount), 0) FROM sales WHERE status = 'completed') AS total_sold,
+      (
+        SELECT COUNT(*) FROM (
+          SELECT b.book_id
+          FROM books b
+          LEFT JOIN copies cp ON b.book_id = cp.book_id AND cp.status = 'available'
+          WHERE b.is_active = 1
+          GROUP BY b.book_id, b.stock_minimum
+          HAVING COUNT(cp.copy_id) <= b.stock_minimum
+        ) low_stock_books
+      ) AS low_stock_books`
+  );
+
+  return stats;
+}
+
+router.get("/stats", async (req, res) => {
+  try {
+    const stats = await getAdminStats();
+    res.json(stats);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "No se pudieron cargar las estadísticas administrativas" });
+  }
+});
+
 router.get("/dashboard", async (req, res) => {
   try {
-    const [[counts]] = await pool.query(
-      `SELECT
-        (SELECT COUNT(*) FROM books WHERE is_active = 1) AS active_books,
-        (SELECT COUNT(*) FROM copies WHERE status = 'available') AS available_copies,
-        (SELECT COUNT(*) FROM loans WHERE status = 'active') AS active_loans,
-        (SELECT COUNT(*) FROM loans WHERE status = 'overdue') AS overdue_loans,
-        (SELECT COUNT(*) FROM users WHERE status = 'active' AND role_id != 1) AS active_users,
-        (SELECT COUNT(*) FROM sales WHERE status = 'completed') AS completed_sales
-      `
-    );
-    res.json(counts);
+    const stats = await getAdminStats();
+    res.json(stats);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "No se pudo cargar el dashboard administrativo" });
@@ -27,20 +55,42 @@ router.get("/dashboard", async (req, res) => {
 router.get("/books", async (req, res) => {
   try {
     const [books] = await pool.query(
-      `SELECT b.book_id, b.title, b.purchase_price, b.rental_price, b.is_active, p.name AS publisher_name,
+      `SELECT b.book_id, b.title, b.description, b.publisher_id, b.publication_year,
+        b.purchase_price, b.rental_price, b.stock_minimum, b.is_active, p.name AS publisher_name,
         COALESCE(SUM(cp.status = 'available'), 0) AS available_copies,
         COALESCE(SUM(cp.status = 'loaned'), 0) AS loaned,
         COALESCE(SUM(cp.status = 'sold'), 0) AS sold
        FROM books b
        LEFT JOIN publishers p ON b.publisher_id = p.publisher_id
        LEFT JOIN copies cp ON b.book_id = cp.book_id
-       GROUP BY b.book_id, b.title, b.purchase_price, b.rental_price, b.is_active, p.name
+       GROUP BY b.book_id, b.title, b.description, b.publisher_id, b.publication_year,
+        b.purchase_price, b.rental_price, b.stock_minimum, b.is_active, p.name
        ORDER BY b.title`
     );
     res.json(books);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "No se pudieron cargar los libros" });
+  }
+});
+
+router.get("/books/low-stock", async (req, res) => {
+  try {
+    const [books] = await pool.query(
+      `SELECT b.book_id, b.title, b.stock_minimum, b.is_active,
+        COALESCE(SUM(cp.status = 'available'), 0) AS available_copies
+       FROM books b
+       LEFT JOIN copies cp ON b.book_id = cp.book_id
+       WHERE b.is_active = 1
+       GROUP BY b.book_id, b.title, b.stock_minimum, b.is_active
+       HAVING available_copies <= b.stock_minimum
+       ORDER BY available_copies ASC, b.title
+       LIMIT 20`
+    );
+    res.json(books);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "No se pudieron cargar los libros con bajo stock" });
   }
 });
 
@@ -91,6 +141,27 @@ router.put("/books/:id", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "No se pudo actualizar el libro" });
+  }
+});
+
+router.patch("/books/:id/status", async (req, res) => {
+  try {
+    const bookId = Number(req.params.id);
+    const isActive = req.body.is_active ? 1 : 0;
+
+    const [result] = await pool.query(
+      "UPDATE books SET is_active = ?, updated_at = NOW() WHERE book_id = ?",
+      [isActive, bookId]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ error: "Libro no encontrado" });
+    }
+
+    res.json({ message: isActive ? "Libro activado" : "Libro desactivado" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "No se pudo cambiar el estado del libro" });
   }
 });
 

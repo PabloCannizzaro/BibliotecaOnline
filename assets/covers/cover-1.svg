@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480" role="img" aria-label="Portada azul">
+  <rect width="360" height="480" rx="28" fill="#174375"/>
+  <circle cx="280" cy="110" r="86" fill="#3aa6ff" opacity=".6"/>
+  <circle cx="92" cy="360" r="120" fill="#9bd4ff" opacity=".22"/>
+  <rect x="58" y="78" width="160" height="18" rx="9" fill="#fff" opacity=".82"/>
+  <rect x="58" y="112" width="228" height="10" rx="5" fill="#fff" opacity=".42"/>
+  <path d="M80 250h200v122H80z" fill="#fff" opacity=".17"/>
+  <path d="M102 276h156v70H102z" fill="#fff" opacity=".74"/>
+</svg>

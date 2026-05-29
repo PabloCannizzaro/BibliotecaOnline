@@ -1,6 +1,17 @@
 const apiBase = "/api";
+const coverAssets = [
+  "assets/covers/cover-1.svg",
+  "assets/covers/cover-2.svg",
+  "assets/covers/cover-3.svg",
+  "assets/covers/cover-4.svg",
+  "assets/covers/cover-5.svg",
+  "assets/covers/cover-6.svg"
+];
+
 const menuToggle = document.getElementById("menuToggle");
 const mainNav = document.getElementById("mainNav");
+const userNavLink = document.getElementById("userNavLink");
+const adminNavLink = document.getElementById("adminNavLink");
 const searchForm = document.getElementById("searchForm");
 const searchInput = document.getElementById("searchInput");
 const toast = document.getElementById("toast");
@@ -9,6 +20,7 @@ const categoryGrid = document.getElementById("categoryGrid");
 const booksGrid = document.getElementById("booksGrid");
 const recommendedList = document.getElementById("recommendedList");
 const bookDetailSection = document.getElementById("bookDetailSection");
+const detailCover = document.getElementById("detailCover");
 const detailBookTitle = document.getElementById("detailBookTitle");
 const detailDescription = document.getElementById("detailDescription");
 const detailAuthors = document.getElementById("detailAuthors");
@@ -21,8 +33,26 @@ const btnBuy = document.getElementById("btnBuy");
 const btnRent = document.getElementById("btnRent");
 const closeDetail = document.getElementById("closeDetail");
 const userSection = document.getElementById("userSection");
+const userProfileSummary = document.getElementById("userProfileSummary");
+const userPurchases = document.getElementById("userPurchases");
+const userLoans = document.getElementById("userLoans");
 const adminSection = document.getElementById("adminSection");
+const adminStatsGrid = document.getElementById("adminStatsGrid");
+const adminOverdue = document.getElementById("adminOverdue");
+const adminOverdueCount = document.getElementById("adminOverdueCount");
+const adminLowStock = document.getElementById("adminLowStock");
+const adminLowStockCount = document.getElementById("adminLowStockCount");
+const adminExtra = document.getElementById("adminExtra");
+const btnAdminRefresh = document.getElementById("btnAdminRefresh");
+const btnAddBookElem = document.getElementById("btnAddBook");
+const btnViewBooks = document.getElementById("btnViewBooks");
+const btnViewLowStock = document.getElementById("btnViewLowStock");
+const btnViewSales = document.getElementById("btnViewSales");
+const btnViewLoans = document.getElementById("btnViewLoans");
+const btnViewUsers = document.getElementById("btnViewUsers");
 const sideUserStatus = document.getElementById("sideUserStatus");
+const progressPanelContent = document.getElementById("progressPanelContent");
+const digitalLoanPanelContent = document.getElementById("digitalLoanPanelContent");
 const userPill = document.getElementById("userPill");
 const userGreeting = document.getElementById("userGreeting");
 const guestActions = document.getElementById("guestActions");
@@ -50,34 +80,15 @@ const reviewFormBlock = document.getElementById("reviewFormBlock");
 const reviewRating = document.getElementById("reviewRating");
 const reviewComment = document.getElementById("reviewComment");
 const btnSubmitReview = document.getElementById("btnSubmitReview");
-const adminSummary = document.getElementById("adminSummary");
-const adminOverdue = document.getElementById("adminOverdue");
-const adminExtra = document.getElementById("adminExtra");
-const btnViewSales = document.getElementById("btnViewSales");
-const btnAddBookElem = document.getElementById("btnAddBook");
-const userPurchases = document.getElementById("userPurchases");
-const userLoans = document.getElementById("userLoans");
 
 let toastTimer;
 let currentBook = null;
 let filterCategory = null;
 let lastSearch = "";
 let currentUser = null;
-
-if (menuToggle && mainNav) {
-  menuToggle.setAttribute("aria-expanded", "false");
-  menuToggle.addEventListener("click", () => {
-    const isOpen = mainNav.classList.toggle("open");
-    menuToggle.setAttribute("aria-expanded", String(isOpen));
-  });
-
-  mainNav.querySelectorAll("a").forEach(link => {
-    link.addEventListener("click", () => {
-      mainNav.classList.remove("open");
-      menuToggle.setAttribute("aria-expanded", "false");
-    });
-  });
-}
+let authMode = "login";
+let latestBooks = [];
+let currentAdminBooks = [];
 
 function getToken() {
   return localStorage.getItem("biblioteca_token");
@@ -96,6 +107,36 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function escapeHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatMoney(value) {
+  const amount = Number(value || 0);
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 2
+  }).format(amount);
+}
+
+function formatDate(value) {
+  if (!value) return "Sin fecha";
+  return String(value).split("T")[0];
+}
+
+function getCoverForBook(book = {}) {
+  const existingCover = book.cover_url || book.image_url || book.cover || book.image;
+  if (existingCover) return existingCover;
+  const bookId = Number(book.book_id || 1);
+  return coverAssets[(Math.max(bookId, 1) - 1) % coverAssets.length] || "assets/book-placeholder.svg";
+}
+
 function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
@@ -107,52 +148,191 @@ function showToast(message) {
 
 function showAlert(message, type = "success") {
   alertBanner.textContent = message;
-  alertBanner.style.background = type === "error" ? "#e64c3c" : "linear-gradient(135deg, #2f6bff, #6a56f6)";
+  alertBanner.dataset.type = type;
   alertBanner.classList.remove("hidden");
   setTimeout(() => alertBanner.classList.add("hidden"), 3600);
 }
 
 async function request(path, options = {}) {
-  const response = await fetch(`${apiBase}${path}`, {
+  return fetch(`${apiBase}${path}`, {
     headers: {
       "Content-Type": "application/json",
       ...authHeaders(),
-      ...options.headers,
+      ...options.headers
     },
-    ...options,
+    ...options
   });
-  return response;
+}
+
+function renderEmpty(message, actionLabel = "", action = "login") {
+  return `
+    <div class="empty-state">
+      <i class="bi bi-info-circle"></i>
+      <p>${escapeHtml(message)}</p>
+      ${actionLabel ? `<button class="btn btn-primary small-btn" type="button" data-panel-action="${action}">${escapeHtml(actionLabel)}</button>` : ""}
+    </div>
+  `;
+}
+
+function renderLoading(message) {
+  return `<div class="loading-state"><span class="loader-dot"></span>${escapeHtml(message)}</div>`;
+}
+
+function updateNavForSession() {
+  const isLogged = Boolean(currentUser);
+  const isAdmin = currentUser?.role_name === "admin";
+
+  userNavLink?.classList.toggle("hidden", !isLogged);
+  adminNavLink?.classList.toggle("hidden", !isAdmin);
+}
+
+function renderGuestPanels() {
+  sideUserStatus.textContent = "Ingresá para ver tu historial, préstamos y compras.";
+  progressPanelContent.innerHTML = renderEmpty("Tenés que iniciar sesión para ver tu progreso de lectura.", "Iniciar sesión");
+  digitalLoanPanelContent.innerHTML = renderEmpty("Tenés que iniciar sesión para ver tus préstamos digitales.", "Iniciar sesión");
+}
+
+function renderLoggedPanels(loans = []) {
+  sideUserStatus.textContent = `Sesión activa: ${currentUser.email}`;
+  progressPanelContent.innerHTML = renderEmpty("Todavía no registraste progreso de lectura.");
+
+  if (!loans.length) {
+    digitalLoanPanelContent.innerHTML = renderEmpty("Todavía no tenés préstamos activos.");
+    return;
+  }
+
+  digitalLoanPanelContent.innerHTML = `
+    <div class="side-list">
+      ${loans.slice(0, 3).map(item => `
+        <article>
+          <strong>${escapeHtml(item.title)}</strong>
+          <span>Vence: ${escapeHtml(formatDate(item.due_date))}</span>
+        </article>
+      `).join("")}
+    </div>
+    <button class="btn btn-primary action-btn" type="button" data-panel-action="user-loans">Ver mis préstamos</button>
+  `;
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const isRegister = mode === "register";
+  authModalTitle.textContent = isRegister ? "Registrarse" : "Iniciar sesión";
+  authSubmit.textContent = isRegister ? "Crear cuenta" : "Ingresar";
+  registerFields.classList.toggle("hidden", !isRegister);
+  authFirstName.required = isRegister;
+  authLastName.required = isRegister;
+  authFirstName.disabled = !isRegister;
+  authLastName.disabled = !isRegister;
+  switchToRegister.textContent = isRegister ? "Iniciar sesión" : "Registrarse";
+  switchToRegister.dataset.mode = isRegister ? "login" : "register";
+}
+
+function openModal() {
+  authModal.classList.remove("hidden");
+  modalOverlay.classList.remove("hidden");
+}
+
+function closeModal() {
+  authModal.classList.add("hidden");
+  modalOverlay.classList.add("hidden");
+}
+
+function openLoginModal() {
+  setAuthMode("login");
+  openModal();
+}
+
+if (menuToggle && mainNav) {
+  menuToggle.setAttribute("aria-expanded", "false");
+  menuToggle.addEventListener("click", () => {
+    const isOpen = mainNav.classList.toggle("open");
+    menuToggle.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  mainNav.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      mainNav.classList.remove("open");
+      menuToggle.setAttribute("aria-expanded", "false");
+    });
+  });
 }
 
 async function loadCategories() {
+  categoryGrid.innerHTML = renderLoading("Cargando categorías...");
   const res = await request("/books/categories");
-  if (!res.ok) return;
+  if (!res.ok) {
+    categoryGrid.innerHTML = renderEmpty("No se pudieron cargar las categorías.");
+    return;
+  }
+
   const categories = await res.json();
-  categoryGrid.innerHTML = categories.map(cat => `
-    <article class="category-card pastel-blue" data-id="${cat.category_id}">
+  if (!categories.length) {
+    categoryGrid.innerHTML = renderEmpty("Todavía no hay categorías disponibles.");
+    return;
+  }
+
+  categoryGrid.innerHTML = categories.map((cat, index) => `
+    <article class="category-card pastel-${(index % 6) + 1}" data-id="${escapeHtml(cat.category_id)}">
       <i class="bi bi-tags"></i>
-      <p>${cat.name}</p>
+      <p>${escapeHtml(cat.name)}</p>
     </article>
   `).join("");
+
   categoryGrid.querySelectorAll(".category-card").forEach(card => {
     card.addEventListener("click", () => {
       filterCategory = card.dataset.id;
       loadBooks(lastSearch, filterCategory);
+      document.getElementById("catalogSection").scrollIntoView({ behavior: "smooth" });
     });
   });
 }
 
 function createBookCard(book) {
+  const available = Number(book.available_copies || 0);
+  const isAvailable = available > 0;
   return `
-    <article class="book-card" data-id="${book.book_id}">
-      <div class="cover cover-a"></div>
-      <h3>${book.title}</h3>
-      <p class="author">${book.authors || "Autor desconocido"}</p>
-      <p class="rating"><span>★</span> ${book.available_copies || 0} disponibles</p>
-      <p class="rating"><span>💲</span> ${book.purchase_price} / ${book.rental_price}</p>
-      <button class="btn btn-secondary action-btn btn-detail" data-id="${book.book_id}">Ver detalle</button>
+    <article class="book-card" data-id="${escapeHtml(book.book_id)}">
+      <div class="book-cover">
+        <img src="${escapeHtml(getCoverForBook(book))}" alt="Portada de ${escapeHtml(book.title)}" onerror="this.src='assets/book-placeholder.svg'">
+      </div>
+      <div class="book-card-body">
+        <span class="book-category">${escapeHtml(book.categories || "Sin categoría")}</span>
+        <h3>${escapeHtml(book.title)}</h3>
+        <p class="author">${escapeHtml(book.authors || "Autor desconocido")}</p>
+        <div class="book-prices">
+          <span><i class="bi bi-bag"></i> ${formatMoney(book.purchase_price)}</span>
+          <span><i class="bi bi-clock-history"></i> ${formatMoney(book.rental_price)}</span>
+        </div>
+        <p class="availability ${isAvailable ? "available" : "unavailable"}">${available} disponible${available === 1 ? "" : "s"}</p>
+      </div>
+      <div class="book-actions">
+        <button class="btn btn-secondary btn-detail" type="button" data-book-detail="${escapeHtml(book.book_id)}">Ver detalle</button>
+        <button class="btn btn-ghost" type="button" data-book-rent="${escapeHtml(book.book_id)}" ${isAvailable ? "" : "disabled"}>Alquilar</button>
+        <button class="btn btn-primary" type="button" data-book-buy="${escapeHtml(book.book_id)}" ${isAvailable ? "" : "disabled"}>Comprar</button>
+      </div>
     </article>
   `;
+}
+
+function bindBookActions(container) {
+  container.querySelectorAll("[data-book-detail]").forEach(btn => {
+    btn.addEventListener("click", () => openBookDetail(btn.dataset.bookDetail));
+  });
+
+  container.querySelectorAll("[data-book-buy]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentBook = latestBooks.find(book => String(book.book_id) === String(btn.dataset.bookBuy)) || { book_id: btn.dataset.bookBuy };
+      handlePurchase();
+    });
+  });
+
+  container.querySelectorAll("[data-book-rent]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentBook = latestBooks.find(book => String(book.book_id) === String(btn.dataset.bookRent)) || { book_id: btn.dataset.bookRent };
+      handleRent();
+    });
+  });
 }
 
 async function loadBooks(search = "", categoryId = null) {
@@ -160,40 +340,53 @@ async function loadBooks(search = "", categoryId = null) {
   const params = new URLSearchParams();
   if (search) params.append("search", search);
   if (categoryId) params.append("category", categoryId);
+
+  booksGrid.innerHTML = renderLoading("Cargando catálogo...");
   const res = await request(`/books?${params.toString()}`);
   if (!res.ok) {
+    booksGrid.innerHTML = renderEmpty("No se pudo cargar el catálogo.");
     showAlert("No se pudo cargar el catálogo", "error");
     return;
   }
+
   const books = await res.json();
-  booksGrid.innerHTML = books.map(createBookCard).join("");
-  booksGrid.querySelectorAll(".btn-detail").forEach(btn => {
-    btn.addEventListener("click", () => openBookDetail(btn.dataset.id));
-  });
+  latestBooks = books;
   if (!books.length) {
-    booksGrid.innerHTML = `<p class="empty-state">No se encontraron libros con esos filtros.</p>`;
+    booksGrid.innerHTML = renderEmpty("No se encontraron libros con esos filtros.");
+    return;
   }
+
+  booksGrid.innerHTML = books.map(createBookCard).join("");
+  bindBookActions(booksGrid);
 }
 
 async function loadRecommendedBooks() {
-  const res = await request(`/books?`);
-  if (!res.ok) return;
+  recommendedList.innerHTML = renderLoading("Cargando recomendados...");
+  const res = await request("/books?");
+  if (!res.ok) {
+    recommendedList.innerHTML = renderEmpty("No se pudieron cargar recomendaciones.");
+    return;
+  }
+
   const books = await res.json();
   const top = books.slice(0, 4);
+  if (!top.length) {
+    recommendedList.innerHTML = renderEmpty("Todavía no hay libros recomendados.");
+    return;
+  }
+
   recommendedList.innerHTML = top.map(book => `
     <article class="recommended-card">
-      <div class="mini-cover cover-g"></div>
+      <img class="mini-cover" src="${escapeHtml(getCoverForBook(book))}" alt="Portada de ${escapeHtml(book.title)}" onerror="this.src='assets/book-placeholder.svg'">
       <div class="recommended-info">
-        <h3>${book.title}</h3>
-        <p>${book.authors || "Autor"}</p>
-        <span>${book.available_copies} disponibles</span>
+        <h3>${escapeHtml(book.title)}</h3>
+        <p>${escapeHtml(book.authors || "Autor desconocido")}</p>
+        <span>${Number(book.available_copies || 0)} disponibles</span>
       </div>
-      <button class="btn btn-ghost action-btn btn-detail" data-id="${book.book_id}">Ver más</button>
+      <button class="btn btn-ghost action-btn btn-detail" type="button" data-book-detail="${escapeHtml(book.book_id)}">Ver más</button>
     </article>
   `).join("");
-  recommendedList.querySelectorAll(".btn-detail").forEach(btn => {
-    btn.addEventListener("click", () => openBookDetail(btn.dataset.id));
-  });
+  bindBookActions(recommendedList);
 }
 
 async function openBookDetail(bookId) {
@@ -202,29 +395,27 @@ async function openBookDetail(bookId) {
     showAlert("No se pudo cargar el detalle del libro", "error");
     return;
   }
+
   const { book, authors, categories, availability, reviews } = await res.json();
   currentBook = book;
   bookDetailSection.classList.remove("hidden");
+  detailCover.innerHTML = `<img src="${escapeHtml(getCoverForBook(book))}" alt="Portada de ${escapeHtml(book.title)}" onerror="this.src='assets/book-placeholder.svg'">`;
   detailBookTitle.textContent = book.title;
   detailDescription.textContent = book.description || "Sin descripción disponible.";
-  detailAuthors.textContent = `Autores: ${authors.map(a => a.name).join(", ")}`;
-  detailCategories.textContent = `Categorías: ${categories.map(c => c.name).join(", ")}`;
+  detailAuthors.textContent = `Autores: ${authors.map(a => a.name).join(", ") || "N/A"}`;
+  detailCategories.textContent = `Categorías: ${categories.map(c => c.name).join(", ") || "N/A"}`;
   detailPublisher.textContent = `Editorial: ${book.publisher_name || "N/A"}`;
-  detailAvailability.textContent = `Disponibles: ${availability.available || 0}`;
-  detailPurchasePrice.textContent = book.purchase_price;
-  detailRentalPrice.textContent = book.rental_price;
+  detailAvailability.textContent = `Disponibles: ${Number(availability?.available || 0)}`;
+  detailPurchasePrice.textContent = formatMoney(book.purchase_price);
+  detailRentalPrice.textContent = formatMoney(book.rental_price);
   reviewsList.innerHTML = reviews.length ? reviews.map(item => `
-      <div class="review-card">
-        <strong>${item.first_name} ${item.last_name}</strong>
-        <p>Calificación: ${'★'.repeat(item.rating)}</p>
-        <p>${item.comment}</p>
-      </div>
-    `).join("") : `<p class="empty-state">Todavía no hay reseñas para este libro.</p>`;
-  if (currentUser) {
-    reviewFormBlock.classList.remove("hidden");
-  } else {
-    reviewFormBlock.classList.add("hidden");
-  }
+    <div class="review-card">
+      <strong>${escapeHtml(item.first_name)} ${escapeHtml(item.last_name)}</strong>
+      <p>Calificación: ${"★".repeat(Number(item.rating || 0))}</p>
+      <p>${escapeHtml(item.comment)}</p>
+    </div>
+  `).join("") : renderEmpty("Todavía no hay reseñas para este libro.");
+  reviewFormBlock.classList.toggle("hidden", !currentUser);
   bookDetailSection.scrollIntoView({ behavior: "smooth" });
 }
 
@@ -232,93 +423,177 @@ async function toggleUserState() {
   const token = getToken();
   if (!token) {
     currentUser = null;
+    updateNavForSession();
     userPill.classList.add("hidden");
     guestActions.classList.remove("hidden");
     btnLogout.classList.add("hidden");
     userSection.classList.add("hidden");
     adminSection.classList.add("hidden");
-    sideUserStatus.textContent = "Ingresá para ver tu historial, préstamos y compras.";
+    renderGuestPanels();
     return;
   }
+
   const res = await request("/user/me");
   if (!res.ok) {
     clearToken();
-    toggleUserState();
+    await toggleUserState();
     return;
   }
+
   currentUser = await res.json();
+  updateNavForSession();
   userGreeting.textContent = `Hola, ${currentUser.first_name}`;
   userPill.classList.remove("hidden");
   guestActions.classList.add("hidden");
   btnLogout.classList.remove("hidden");
-  sideUserStatus.textContent = `Sesión activa: ${currentUser.email}`;
+  userSection.classList.remove("hidden");
+  userProfileSummary.innerHTML = `
+    <img src="assets/user-avatar.svg" alt="Avatar de usuario">
+    <div>
+      <span>${escapeHtml(currentUser.role_name === "admin" ? "Administrador" : "Usuario")}</span>
+      <strong>${escapeHtml(currentUser.first_name)} ${escapeHtml(currentUser.last_name)}</strong>
+      <p>${escapeHtml(currentUser.email)}</p>
+    </div>
+  `;
+
+  await loadUserData();
+
   if (currentUser.role_name === "admin") {
     adminSection.classList.remove("hidden");
-    loadAdminDashboard();
+    await loadAdminDashboard();
+  } else {
+    adminSection.classList.add("hidden");
   }
-  userSection.classList.remove("hidden");
-  loadUserData();
 }
 
 async function loadUserData() {
-  const purchasesRes = await request("/user/purchases");
-  const loansRes = await request("/user/loans?status=active");
+  userPurchases.innerHTML = renderLoading("Cargando compras...");
+  userLoans.innerHTML = renderLoading("Cargando préstamos...");
+
+  const [purchasesRes, loansRes] = await Promise.all([
+    request("/user/purchases"),
+    request("/user/loans?status=active")
+  ]);
+
   if (purchasesRes.ok) {
     const purchases = await purchasesRes.json();
-    if (purchases.length) {
-      userPurchases.innerHTML = purchases.map(item => `
-        <div class="review-card">
-          <strong>${item.title}</strong>
-          <p>${item.sale_date.split('T')[0]} - ${item.quantity} unidad(es)</p>
-          <p>Total: $${item.total_amount}</p>
-        </div>
-      `).join("");
-    } else {
-      userPurchases.innerHTML = `<p class="empty-state">Aún no has realizado compras.</p>`;
-    }
+    userPurchases.innerHTML = purchases.length ? purchases.map(item => `
+      <div class="review-card">
+        <strong>${escapeHtml(item.title)}</strong>
+        <p>${escapeHtml(formatDate(item.sale_date))} - ${Number(item.quantity)} unidad(es)</p>
+        <p>Total: ${formatMoney(item.total_amount)}</p>
+      </div>
+    `).join("") : renderEmpty("Aún no realizaste compras.");
+  } else {
+    userPurchases.innerHTML = renderEmpty("No se pudieron cargar tus compras.");
   }
+
+  let loans = [];
   if (loansRes.ok) {
-    const loans = await loansRes.json();
-    if (loans.length) {
-      userLoans.innerHTML = loans.map(item => `
-        <div class="review-card">
-          <strong>${item.title}</strong>
-          <p>Vencimiento: ${item.due_date.split('T')[0]}</p>
-          <p>Estado: ${item.status}</p>
-        </div>
-      `).join("");
-    } else {
-      userLoans.innerHTML = `<p class="empty-state">No tenés préstamos activos.</p>`;
-    }
+    loans = await loansRes.json();
+    userLoans.innerHTML = loans.length ? loans.map(item => `
+      <div class="review-card">
+        <strong>${escapeHtml(item.title)}</strong>
+        <p>Vencimiento: ${escapeHtml(formatDate(item.due_date))}</p>
+        <p>Estado: ${escapeHtml(item.status)}</p>
+      </div>
+    `).join("") : renderEmpty("Todavía no tenés préstamos activos.");
+  } else {
+    userLoans.innerHTML = renderEmpty("No se pudieron cargar tus préstamos.");
   }
+
+  renderLoggedPanels(loans);
+}
+
+function renderStats(stats = {}) {
+  const cards = [
+    ["bi-journal-bookmark", "Total libros", stats.total_books],
+    ["bi-people", "Usuarios", stats.total_users],
+    ["bi-bookmark-check", "Préstamos activos", stats.active_loans],
+    ["bi-exclamation-triangle", "Préstamos vencidos", stats.overdue_loans],
+    ["bi-receipt", "Ventas", stats.completed_sales],
+    ["bi-cash-stack", "Total vendido", formatMoney(stats.total_sold)],
+    ["bi-box-seam", "Bajo stock", stats.low_stock_books],
+    ["bi-check-circle", "Ejemplares disponibles", stats.available_copies]
+  ];
+
+  adminStatsGrid.innerHTML = cards.map(([icon, label, value]) => `
+    <article class="admin-stat-card">
+      <i class="bi ${icon}"></i>
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value ?? 0)}</strong>
+    </article>
+  `).join("");
+}
+
+function table(headers, rows, renderRow, emptyMessage) {
+  if (!rows.length) return renderEmpty(emptyMessage);
+  return `
+    <table>
+      <thead><tr>${headers.map(item => `<th>${escapeHtml(item)}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map(renderRow).join("")}</tbody>
+    </table>
+  `;
+}
+
+function renderOverdue(loans) {
+  adminOverdueCount.textContent = loans.length;
+  adminOverdue.innerHTML = table(
+    ["Libro", "Usuario", "Vencimiento", "Estado"],
+    loans,
+    item => `
+      <tr>
+        <td>${escapeHtml(item.title)}</td>
+        <td>${escapeHtml(item.first_name)} ${escapeHtml(item.last_name)}</td>
+        <td>${escapeHtml(formatDate(item.due_date))}</td>
+        <td><span class="status-badge danger">${escapeHtml(item.status)}</span></td>
+      </tr>
+    `,
+    "No hay préstamos vencidos."
+  );
+}
+
+function renderLowStock(books, target = adminLowStock) {
+  if (adminLowStockCount) adminLowStockCount.textContent = books.length;
+  target.innerHTML = table(
+    ["Libro", "Disponibles", "Mínimo", "Estado"],
+    books,
+    item => `
+      <tr>
+        <td>${escapeHtml(item.title)}</td>
+        <td>${Number(item.available_copies || 0)}</td>
+        <td>${Number(item.stock_minimum || 0)}</td>
+        <td><span class="status-badge warning">Revisar</span></td>
+      </tr>
+    `,
+    "No hay libros con bajo stock."
+  );
 }
 
 async function loadAdminDashboard() {
-  const dashRes = await request("/admin/dashboard");
-  const overdueRes = await request("/admin/loans/overdue");
-  if (dashRes.ok) {
-    const summary = await dashRes.json();
-    adminSummary.innerHTML = `
-      <p>Libros activos: ${summary.active_books}</p>
-      <p>Ejemplares disponibles: ${summary.available_copies}</p>
-      <p>Préstamos activos: ${summary.active_loans}</p>
-      <p>Préstamos vencidos: ${summary.overdue_loans}</p>
-      <p>Ventas completadas: ${summary.completed_sales}</p>
-    `;
-  }
-  if (overdueRes.ok) {
-    const loans = await overdueRes.json();
-    if (loans.length) {
-      adminOverdue.innerHTML = loans.map(item => `
-        <div class="review-card">
-          <strong>${item.title}</strong>
-          <p>${item.first_name} ${item.last_name}</p>
-          <p>Vencimiento: ${item.due_date.split('T')[0]}</p>
-        </div>
-      `).join("");
-    } else {
-      adminOverdue.innerHTML = `<p class="empty-state">No hay préstamos vencidos.</p>`;
-    }
+  if (currentUser?.role_name !== "admin") return;
+
+  adminStatsGrid.innerHTML = `<article class="admin-stat-card loading-card">${renderLoading("Cargando estadísticas...")}</article>`;
+  adminOverdue.innerHTML = renderLoading("Cargando préstamos vencidos...");
+  adminLowStock.innerHTML = renderLoading("Cargando bajo stock...");
+
+  const [statsRes, overdueRes, lowStockRes] = await Promise.all([
+    request("/admin/stats"),
+    request("/admin/loans/overdue"),
+    request("/admin/books/low-stock")
+  ]);
+
+  if (statsRes.ok) renderStats(await statsRes.json());
+  else adminStatsGrid.innerHTML = `<article class="admin-stat-card error-card">No se pudieron cargar estadísticas.</article>`;
+
+  if (overdueRes.ok) renderOverdue(await overdueRes.json());
+  else adminOverdue.innerHTML = renderEmpty("No se pudieron cargar los préstamos vencidos.");
+
+  if (lowStockRes.ok) renderLowStock(await lowStockRes.json());
+  else adminLowStock.innerHTML = renderEmpty("No se pudieron cargar los libros con bajo stock.");
+
+  if (!adminExtra.innerHTML.trim()) {
+    adminExtra.innerHTML = renderEmpty("Seleccioná una acción rápida para gestionar la biblioteca.");
   }
 }
 
@@ -328,48 +603,51 @@ async function loadAdminOptions() {
     request("/books/authors"),
     request("/books/publishers")
   ]);
-  const categories = categoriesRes.ok ? await categoriesRes.json() : [];
-  const authors = authorsRes.ok ? await authorsRes.json() : [];
-  const publishers = publishersRes.ok ? await publishersRes.json() : [];
-  return { categories, authors, publishers };
+  return {
+    categories: categoriesRes.ok ? await categoriesRes.json() : [],
+    authors: authorsRes.ok ? await authorsRes.json() : [],
+    publishers: publishersRes.ok ? await publishersRes.json() : []
+  };
 }
 
-function renderAdminForm({ categories, authors, publishers }) {
+function setAdminExtra(title, body) {
   adminExtra.innerHTML = `
-    <div class="panel-card">
-      <h3>Agregar nuevo libro</h3>
-      <form id="adminAddBookForm" class="auth-form">
-        <input type="text" id="bookTitle" placeholder="Título" required>
-        <textarea id="bookDescription" placeholder="Descripción"></textarea>
-        <div class="form-grid">
-          <select id="bookPublisher" required>
-            <option value="">Seleccioná editorial</option>
-            ${publishers.map(pub => `<option value="${pub.publisher_id}">${pub.name}</option>`).join("")}
-          </select>
-          <input type="number" id="bookYear" placeholder="Año" min="1900" max="2025">
-        </div>
-        <div class="form-grid">
-          <input type="number" id="bookPurchasePrice" placeholder="Precio compra" min="0" step="0.01" required>
-          <input type="number" id="bookRentalPrice" placeholder="Precio alquiler" min="0" step="0.01" required>
-        </div>
-        <select id="bookAuthors" multiple>
-          ${authors.map(author => `<option value="${author.author_id}">${author.name}</option>`).join("")}
-        </select>
-        <select id="bookCategories" multiple>
-          ${categories.map(cat => `<option value="${cat.category_id}">${cat.name}</option>`).join("")}
-        </select>
-        <button class="btn btn-primary" type="submit">Crear libro</button>
-      </form>
+    <div class="admin-card-head">
+      <h3>${escapeHtml(title)}</h3>
     </div>
+    ${body}
   `;
-  const adminAddBookForm = document.getElementById("adminAddBookForm");
-  adminAddBookForm.addEventListener("submit", handleAddBook);
 }
 
 async function showAddBookForm() {
-  const data = await loadAdminOptions();
-  renderAdminForm(data);
-  adminSection.scrollIntoView({ behavior: "smooth" });
+  setAdminExtra("Agregar nuevo libro", renderLoading("Cargando opciones..."));
+  const { categories, authors, publishers } = await loadAdminOptions();
+  setAdminExtra("Agregar nuevo libro", `
+    <form id="adminAddBookForm" class="auth-form admin-form">
+      <input type="text" id="bookTitle" placeholder="Título" required>
+      <textarea id="bookDescription" placeholder="Descripción"></textarea>
+      <div class="form-grid">
+        <select id="bookPublisher" required>
+          <option value="">Seleccioná editorial</option>
+          ${publishers.map(pub => `<option value="${escapeHtml(pub.publisher_id)}">${escapeHtml(pub.name)}</option>`).join("")}
+        </select>
+        <input type="number" id="bookYear" placeholder="Año" min="1900" max="2100">
+      </div>
+      <div class="form-grid">
+        <input type="number" id="bookPurchasePrice" placeholder="Precio compra" min="0" step="0.01" required>
+        <input type="number" id="bookRentalPrice" placeholder="Precio alquiler" min="0" step="0.01" required>
+      </div>
+      <select id="bookAuthors" multiple>
+        ${authors.map(author => `<option value="${escapeHtml(author.author_id)}">${escapeHtml(author.name)}</option>`).join("")}
+      </select>
+      <select id="bookCategories" multiple>
+        ${categories.map(cat => `<option value="${escapeHtml(cat.category_id)}">${escapeHtml(cat.name)}</option>`).join("")}
+      </select>
+      <button class="btn btn-primary" type="submit">Crear libro</button>
+    </form>
+  `);
+  document.getElementById("adminAddBookForm").addEventListener("submit", handleAddBook);
+  adminExtra.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function handleAddBook(event) {
@@ -384,11 +662,11 @@ async function handleAddBook(event) {
   const categoryIds = Array.from(document.getElementById("bookCategories").selectedOptions).map(opt => Number(opt.value));
 
   if (!title || !publisher_id || !purchase_price || !rental_price) {
-    showAlert("Completa los campos obligatorios", "error");
+    showAlert("Completá los campos obligatorios", "error");
     return;
   }
 
-  const res = await request(`/admin/books`, {
+  const res = await request("/admin/books", {
     method: "POST",
     body: JSON.stringify({
       title,
@@ -398,8 +676,8 @@ async function handleAddBook(event) {
       purchase_price,
       rental_price,
       author_ids: authorIds,
-      category_ids: categoryIds,
-    }),
+      category_ids: categoryIds
+    })
   });
   const result = await res.json();
   if (!res.ok) {
@@ -407,125 +685,286 @@ async function handleAddBook(event) {
     return;
   }
   showToast(result.message);
-  loadAdminDashboard();
-  loadBooks(lastSearch, filterCategory);
-  adminExtra.innerHTML = "";
+  await loadAdminDashboard();
+  await loadBooks(lastSearch, filterCategory);
+  await showAdminBooks();
 }
 
-async function showSales() {
-  const res = await request("/admin/sales");
+async function showAdminBooks() {
+  setAdminExtra("Gestión de libros", renderLoading("Cargando libros..."));
+  const res = await request("/admin/books");
   if (!res.ok) {
-    showAlert("No se pudieron cargar las ventas", "error");
+    setAdminExtra("Gestión de libros", renderEmpty("No se pudieron cargar los libros."));
     return;
   }
-  const sales = await res.json();
-  adminExtra.innerHTML = `
-    <div class="panel-card">
-      <h3>Ventas registradas</h3>
-      <div class="admin-extra">
-        <table>
-          <thead>
-            <tr><th>ID</th><th>Usuario</th><th>Total</th><th>Fecha</th><th>Estado</th></tr>
-          </thead>
-          <tbody>
-            ${sales.map(row => `
-              <tr>
-                <td>${row.sale_id}</td>
-                <td>${row.first_name} ${row.last_name}</td>
-                <td>$${row.total_amount}</td>
-                <td>${row.sale_date.split('T')[0]}</td>
-                <td>${row.status}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
+
+  currentAdminBooks = await res.json();
+  setAdminExtra("Gestión de libros", table(
+    ["Libro", "Precio", "Alquiler", "Stock", "Estado", "Acciones"],
+    currentAdminBooks,
+    item => `
+      <tr>
+        <td>${escapeHtml(item.title)}</td>
+        <td>${formatMoney(item.purchase_price)}</td>
+        <td>${formatMoney(item.rental_price)}</td>
+        <td>${Number(item.available_copies || 0)}</td>
+        <td><span class="status-badge ${item.is_active ? "success" : "muted"}">${item.is_active ? "Activo" : "Inactivo"}</span></td>
+        <td class="table-actions">
+          <button type="button" class="btn btn-ghost small-btn" data-admin-action="edit" data-id="${escapeHtml(item.book_id)}">Editar</button>
+          <button type="button" class="btn btn-ghost small-btn" data-admin-action="price" data-id="${escapeHtml(item.book_id)}">Precio</button>
+          <button type="button" class="btn btn-ghost small-btn" data-admin-action="stock" data-id="${escapeHtml(item.book_id)}">Stock</button>
+          <button type="button" class="btn btn-secondary small-btn" data-admin-action="status" data-id="${escapeHtml(item.book_id)}">${item.is_active ? "Desactivar" : "Activar"}</button>
+        </td>
+      </tr>
+    `,
+    "No hay libros cargados."
+  ));
+
+  adminExtra.querySelectorAll("[data-admin-action]").forEach(btn => {
+    btn.addEventListener("click", () => handleAdminBookAction(btn.dataset.adminAction, btn.dataset.id));
+  });
+  adminExtra.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function openModal() {
-  authModal.classList.remove("hidden");
-  modalOverlay.classList.remove("hidden");
-}
+async function handleAdminBookAction(action, bookId) {
+  const book = currentAdminBooks.find(item => String(item.book_id) === String(bookId));
+  if (!book) return;
 
-function closeModal() {
-  authModal.classList.add("hidden");
-  modalOverlay.classList.add("hidden");
-}
-
-function setAuthMode(mode) {
-  if (mode === "register") {
-    authModalTitle.textContent = "Registrarse";
-    authSubmit.textContent = "Crear cuenta";
-    registerFields.classList.remove("hidden");
-    switchToRegister.textContent = "Iniciar sesión";
-    switchToRegister.dataset.mode = "login";
-  } else {
-    authModalTitle.textContent = "Iniciar sesión";
-    authSubmit.textContent = "Ingresar";
-    registerFields.classList.add("hidden");
-    switchToRegister.textContent = "Registrarse";
-    switchToRegister.dataset.mode = "register";
-  }
-}
-
-async function handleAuthSubmit(event) {
-  event.preventDefault();
-  const mode = switchToRegister.dataset.mode === "login" ? "register" : "login";
-  const email = authEmail.value.trim();
-  const password = authPassword.value.trim();
-  if (!email || !password) {
-    showAlert("Completa email y contraseña", "error");
-    return;
-  }
-  if (mode === "register") {
-    const firstName = authFirstName.value.trim();
-    const lastName = authLastName.value.trim();
-    if (!firstName || !lastName) {
-      showAlert("Completa nombre y apellido", "error");
-      return;
-    }
-    const res = await request("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ first_name: firstName, last_name: lastName, email, password }),
+  if (action === "edit") return showEditBookForm(book);
+  if (action === "price") return showPriceForm(book);
+  if (action === "stock") return showStockForm(book);
+  if (action === "status") {
+    const res = await request(`/admin/books/${book.book_id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ is_active: !book.is_active })
     });
     const result = await res.json();
     if (!res.ok) {
-      showAlert(result.error || "No se pudo registrar", "error");
+      showAlert(result.error || "No se pudo cambiar el estado", "error");
       return;
     }
-    setToken(result.token);
-    showToast("Registro exitoso");
-    closeModal();
-    toggleUserState();
-    return;
+    showToast(result.message);
+    await loadAdminDashboard();
+    await showAdminBooks();
   }
-  const res = await request("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
+}
+
+async function showEditBookForm(book) {
+  setAdminExtra(`Editar libro: ${book.title}`, renderLoading("Cargando editoriales..."));
+  const { publishers } = await loadAdminOptions();
+  setAdminExtra(`Editar libro: ${book.title}`, `
+    <form id="adminEditBookForm" class="auth-form admin-form">
+      <input type="text" id="editBookTitle" value="${escapeHtml(book.title)}" required>
+      <textarea id="editBookDescription" placeholder="Descripción">${escapeHtml(book.description || "")}</textarea>
+      <div class="form-grid">
+        <select id="editBookPublisher" required>
+          ${publishers.map(pub => `<option value="${escapeHtml(pub.publisher_id)}" ${Number(pub.publisher_id) === Number(book.publisher_id) ? "selected" : ""}>${escapeHtml(pub.name)}</option>`).join("")}
+        </select>
+        <input type="number" id="editBookYear" placeholder="Año" min="1900" max="2100" value="${escapeHtml(book.publication_year || "")}">
+      </div>
+      <div class="form-grid">
+        <input type="number" id="editBookPurchasePrice" min="0" step="0.01" value="${escapeHtml(book.purchase_price)}" required>
+        <input type="number" id="editBookRentalPrice" min="0" step="0.01" value="${escapeHtml(book.rental_price)}" required>
+      </div>
+      <label class="toggle-row">
+        <input type="checkbox" id="editBookActive" ${book.is_active ? "checked" : ""}>
+        Libro activo
+      </label>
+      <button class="btn btn-primary" type="submit">Guardar cambios</button>
+    </form>
+  `);
+
+  document.getElementById("adminEditBookForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const res = await request(`/admin/books/${book.book_id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        title: document.getElementById("editBookTitle").value.trim(),
+        description: document.getElementById("editBookDescription").value.trim(),
+        publisher_id: Number(document.getElementById("editBookPublisher").value),
+        publication_year: document.getElementById("editBookYear").value ? Number(document.getElementById("editBookYear").value) : null,
+        purchase_price: Number(document.getElementById("editBookPurchasePrice").value),
+        rental_price: Number(document.getElementById("editBookRentalPrice").value),
+        is_active: document.getElementById("editBookActive").checked
+      })
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      showAlert(result.error || "No se pudo actualizar el libro", "error");
+      return;
+    }
+    showToast(result.message);
+    await loadAdminDashboard();
+    await loadBooks(lastSearch, filterCategory);
+    await showAdminBooks();
   });
-  const result = await res.json();
+}
+
+function showPriceForm(book) {
+  setAdminExtra(`Cambiar precio: ${book.title}`, `
+    <form id="adminPriceForm" class="auth-form admin-form">
+      <div class="form-grid">
+        <input type="number" id="pricePurchase" min="0" step="0.01" value="${escapeHtml(book.purchase_price)}" required>
+        <input type="number" id="priceRental" min="0" step="0.01" value="${escapeHtml(book.rental_price)}" required>
+      </div>
+      <input type="text" id="priceReason" placeholder="Motivo del cambio">
+      <button class="btn btn-primary" type="submit">Actualizar precio</button>
+    </form>
+  `);
+
+  document.getElementById("adminPriceForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const res = await request(`/admin/books/${book.book_id}/prices`, {
+      method: "POST",
+      body: JSON.stringify({
+        purchase_price: Number(document.getElementById("pricePurchase").value),
+        rental_price: Number(document.getElementById("priceRental").value),
+        reason: document.getElementById("priceReason").value.trim()
+      })
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      showAlert(result.error || "No se pudo actualizar el precio", "error");
+      return;
+    }
+    showToast(result.message);
+    await loadAdminDashboard();
+    await showAdminBooks();
+  });
+}
+
+function showStockForm(book) {
+  setAdminExtra(`Agregar stock: ${book.title}`, `
+    <form id="adminStockForm" class="auth-form admin-form">
+      <div class="form-grid">
+        <input type="number" id="stockQuantity" min="1" placeholder="Cantidad" required>
+        <select id="stockCondition">
+          <option value="new">Nuevo</option>
+          <option value="good" selected>Bueno</option>
+          <option value="used">Usado</option>
+          <option value="damaged">Dañado</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" type="submit">Agregar ejemplares</button>
+    </form>
+  `);
+
+  document.getElementById("adminStockForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const res = await request(`/admin/books/${book.book_id}/copies`, {
+      method: "POST",
+      body: JSON.stringify({
+        quantity: Number(document.getElementById("stockQuantity").value),
+        copy_condition: document.getElementById("stockCondition").value,
+        status: "available"
+      })
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      showAlert(result.error || "No se pudo agregar stock", "error");
+      return;
+    }
+    showToast(result.message);
+    await loadAdminDashboard();
+    await showAdminBooks();
+  });
+}
+
+async function showLowStock() {
+  setAdminExtra("Libros con bajo stock", renderLoading("Cargando bajo stock..."));
+  const res = await request("/admin/books/low-stock");
   if (!res.ok) {
-    showAlert(result.error || "No se pudo iniciar sesión", "error");
+    setAdminExtra("Libros con bajo stock", renderEmpty("No se pudieron cargar los libros con bajo stock."));
     return;
   }
-  setToken(result.token);
-  showToast("Bienvenido nuevamente");
-  closeModal();
-  toggleUserState();
+  const books = await res.json();
+  setAdminExtra("Libros con bajo stock", `<div id="adminLowStockFull"></div>`);
+  renderLowStock(books, document.getElementById("adminLowStockFull"));
+}
+
+async function showSales() {
+  setAdminExtra("Ventas registradas", renderLoading("Cargando ventas..."));
+  const res = await request("/admin/sales");
+  if (!res.ok) {
+    setAdminExtra("Ventas registradas", renderEmpty("No se pudieron cargar las ventas."));
+    return;
+  }
+  const sales = await res.json();
+  setAdminExtra("Ventas registradas", table(
+    ["ID", "Usuario", "Total", "Fecha", "Estado"],
+    sales,
+    row => `
+      <tr>
+        <td>${Number(row.sale_id)}</td>
+        <td>${escapeHtml(row.first_name)} ${escapeHtml(row.last_name)}</td>
+        <td>${formatMoney(row.total_amount)}</td>
+        <td>${escapeHtml(formatDate(row.sale_date))}</td>
+        <td><span class="status-badge success">${escapeHtml(row.status)}</span></td>
+      </tr>
+    `,
+    "Todavía no hay ventas registradas."
+  ));
+}
+
+async function showLoans() {
+  setAdminExtra("Préstamos", renderLoading("Cargando préstamos..."));
+  const [activeRes, overdueRes] = await Promise.all([
+    request("/admin/loans/active"),
+    request("/admin/loans/overdue")
+  ]);
+
+  const active = activeRes.ok ? await activeRes.json() : [];
+  const overdue = overdueRes.ok ? await overdueRes.json() : [];
+  const loans = [...overdue, ...active];
+
+  setAdminExtra("Préstamos", table(
+    ["Libro", "Usuario", "Vencimiento", "Estado"],
+    loans,
+    row => `
+      <tr>
+        <td>${escapeHtml(row.title)}</td>
+        <td>${escapeHtml(row.first_name)} ${escapeHtml(row.last_name)}</td>
+        <td>${escapeHtml(formatDate(row.due_date))}</td>
+        <td><span class="status-badge ${row.status === "overdue" ? "danger" : "success"}">${escapeHtml(row.status)}</span></td>
+      </tr>
+    `,
+    "No hay préstamos activos ni vencidos."
+  ));
+}
+
+async function showUsers() {
+  setAdminExtra("Usuarios", renderLoading("Cargando usuarios..."));
+  const res = await request("/admin/users");
+  if (!res.ok) {
+    setAdminExtra("Usuarios", renderEmpty("No se pudieron cargar los usuarios."));
+    return;
+  }
+  const users = await res.json();
+  setAdminExtra("Usuarios", table(
+    ["Nombre", "Email", "Rol", "Estado", "Alta"],
+    users,
+    row => `
+      <tr>
+        <td>${escapeHtml(row.first_name)} ${escapeHtml(row.last_name)}</td>
+        <td>${escapeHtml(row.email)}</td>
+        <td>${escapeHtml(row.role_name)}</td>
+        <td><span class="status-badge ${row.status === "active" ? "success" : "muted"}">${escapeHtml(row.status)}</span></td>
+        <td>${escapeHtml(formatDate(row.created_at))}</td>
+      </tr>
+    `,
+    "No hay usuarios para mostrar."
+  ));
 }
 
 async function handlePurchase() {
   if (!currentUser) {
     showAlert("Debés iniciar sesión para comprar", "error");
-    openModal();
-    setAuthMode("login");
+    openLoginModal();
     return;
   }
   const res = await request("/user/purchases", {
     method: "POST",
-    body: JSON.stringify({ book_id: currentBook.book_id, quantity: 1 }),
+    body: JSON.stringify({ book_id: currentBook.book_id, quantity: 1 })
   });
   const result = await res.json();
   if (!res.ok) {
@@ -533,20 +972,19 @@ async function handlePurchase() {
     return;
   }
   showToast(result.message);
-  loadBooks(lastSearch, filterCategory);
-  loadUserData();
+  await loadBooks(lastSearch, filterCategory);
+  await loadUserData();
 }
 
 async function handleRent() {
   if (!currentUser) {
     showAlert("Debés iniciar sesión para alquilar", "error");
-    openModal();
-    setAuthMode("login");
+    openLoginModal();
     return;
   }
   const res = await request("/user/loans", {
     method: "POST",
-    body: JSON.stringify({ book_id: currentBook.book_id, days: 7 }),
+    body: JSON.stringify({ book_id: currentBook.book_id, days: 7 })
   });
   const result = await res.json();
   if (!res.ok) {
@@ -554,8 +992,8 @@ async function handleRent() {
     return;
   }
   showToast(result.message);
-  loadBooks(lastSearch, filterCategory);
-  loadUserData();
+  await loadBooks(lastSearch, filterCategory);
+  await loadUserData();
 }
 
 async function handleReviewSubmit() {
@@ -571,7 +1009,7 @@ async function handleReviewSubmit() {
   }
   const res = await request(`/books/${currentBook.book_id}/reviews`, {
     method: "POST",
-    body: JSON.stringify({ rating, comment }),
+    body: JSON.stringify({ rating, comment })
   });
   const result = await res.json();
   if (!res.ok) {
@@ -584,14 +1022,66 @@ async function handleReviewSubmit() {
   openBookDetail(currentBook.book_id);
 }
 
+async function handleAuthSubmit(event) {
+  event.preventDefault();
+  const email = authEmail.value.trim();
+  const password = authPassword.value.trim();
+  if (!email || !password) {
+    showAlert("Completá email y contraseña", "error");
+    return;
+  }
+
+  if (authMode === "register") {
+    const firstName = authFirstName.value.trim();
+    const lastName = authLastName.value.trim();
+    if (!firstName || !lastName) {
+      showAlert("Completá nombre y apellido", "error");
+      return;
+    }
+    const res = await request("/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ first_name: firstName, last_name: lastName, email, password })
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      showAlert(result.error || "No se pudo registrar", "error");
+      return;
+    }
+    setToken(result.token);
+    showToast("Registro exitoso");
+    closeModal();
+    await toggleUserState();
+    return;
+  }
+
+  const res = await request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password })
+  });
+  const result = await res.json();
+  if (!res.ok) {
+    showAlert(result.error || "No se pudo iniciar sesión", "error");
+    return;
+  }
+  setToken(result.token);
+  showToast("Bienvenido nuevamente");
+  closeModal();
+  await toggleUserState();
+}
+
+document.addEventListener("click", event => {
+  const action = event.target.closest("[data-panel-action]")?.dataset.panelAction;
+  if (action === "login") openLoginModal();
+  if (action === "user-loans") userSection.scrollIntoView({ behavior: "smooth" });
+});
+
 btnExplore?.addEventListener("click", () => {
   document.getElementById("catalogSection").scrollIntoView({ behavior: "smooth" });
 });
 
-searchForm?.addEventListener("submit", async event => {
+searchForm?.addEventListener("submit", event => {
   event.preventDefault();
-  const value = searchInput.value.trim();
-  loadBooks(value, filterCategory);
+  loadBooks(searchInput.value.trim(), filterCategory);
 });
 
 clearFilters?.addEventListener("click", event => {
@@ -613,52 +1103,41 @@ loadRecommended?.addEventListener("click", event => {
   loadRecommendedBooks();
 });
 
-btnOpenLogin?.addEventListener("click", () => {
-  setAuthMode("login");
-  openModal();
-});
-
+btnOpenLogin?.addEventListener("click", openLoginModal);
 btnOpenRegister?.addEventListener("click", () => {
   setAuthMode("register");
   openModal();
 });
-
 switchToRegister?.addEventListener("click", event => {
   event.preventDefault();
-  const mode = event.target.dataset.mode === "register" ? "register" : "login";
-  setAuthMode(mode);
+  setAuthMode(event.target.dataset.mode === "register" ? "register" : "login");
 });
-
 closeAuthModal?.addEventListener("click", closeModal);
 modalOverlay?.addEventListener("click", closeModal);
-
 authForm?.addEventListener("submit", handleAuthSubmit);
-
 closeDetail?.addEventListener("click", () => bookDetailSection.classList.add("hidden"));
-
 btnBuy?.addEventListener("click", handlePurchase);
 btnRent?.addEventListener("click", handleRent);
 btnSubmitReview?.addEventListener("click", handleReviewSubmit);
-btnLogout?.addEventListener("click", () => {
+btnLogout?.addEventListener("click", async () => {
   clearToken();
-  toggleUserState();
+  await toggleUserState();
   showToast("Sesión cerrada");
 });
 
-btnAddBookElem?.addEventListener("click", event => {
-  event.preventDefault();
-  showAddBookForm();
-});
-
-btnViewSales?.addEventListener("click", event => {
-  event.preventDefault();
-  showSales();
-});
+adminNavLink?.addEventListener("click", () => loadAdminDashboard());
+btnAdminRefresh?.addEventListener("click", loadAdminDashboard);
+btnAddBookElem?.addEventListener("click", showAddBookForm);
+btnViewBooks?.addEventListener("click", showAdminBooks);
+btnViewLowStock?.addEventListener("click", showLowStock);
+btnViewSales?.addEventListener("click", showSales);
+btnViewLoans?.addEventListener("click", showLoans);
+btnViewUsers?.addEventListener("click", showUsers);
 
 async function init() {
-  await loadCategories();
-  await loadBooks();
-  await loadRecommendedBooks();
+  setAuthMode("login");
+  renderGuestPanels();
+  await Promise.all([loadCategories(), loadBooks(), loadRecommendedBooks()]);
   await toggleUserState();
 }
 

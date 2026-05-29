@@ -27,10 +27,11 @@
       </button>
 
       <nav id="mainNav" class="main-nav" aria-label="Navegación principal">
-        <a href="#catalogSection">Inicio</a>
-        <a href="#categorySection">Catálogo</a>
-        <a href="#adminSection">Administración</a>
+        <a href="#homeSection">Inicio</a>
+        <a href="#catalogSection">Catálogo</a>
         <a href="#footerSection">Contacto</a>
+        <a href="#userSection" id="userNavLink" class="hidden">Mi cuenta</a>
+        <a href="#adminSection" id="adminNavLink" class="hidden">Administración</a>
       </nav>
 
       <div class="header-actions">
@@ -38,7 +39,7 @@
           <i class="bi bi-bell"></i>
         </button>
         <div class="user-pill hidden" id="userPill">
-          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80" alt="Avatar de usuario" id="userAvatar">
+          <img src="assets/user-avatar.svg" alt="Avatar de usuario" id="userAvatar">
           <span id="userGreeting">Hola</span>
         </div>
         <div class="auth-buttons" id="guestActions">
@@ -55,7 +56,7 @@
     <div class="content-grid">
       <main class="main-content">
         <!-- Hero / banner principal -->
-        <section class="hero-section">
+        <section class="hero-section" id="homeSection">
           <div class="hero-copy">
             <p class="hero-badge">Biblioteca online</p>
             <h1>Explorá miles de libros digitales</h1>
@@ -166,6 +167,7 @@
           <div class="section-head">
             <h2>Mi cuenta</h2>
           </div>
+          <article class="user-profile-card" id="userProfileSummary"></article>
           <div class="dashboard-grid">
             <article class="panel-card">
               <h3>Mis compras</h3>
@@ -178,25 +180,49 @@
           </div>
         </section>
 
-        <section class="section-block hidden" id="adminSection">
-          <div class="section-head">
-            <h2>Panel administrador</h2>
+        <section class="section-block hidden admin-panel" id="adminSection">
+          <div class="admin-hero">
+            <div>
+              <p class="admin-kicker">Administración</p>
+              <h2>Panel de control</h2>
+              <p>Gestioná catálogo, usuarios, préstamos, ventas y stock desde una vista operativa.</p>
+            </div>
+            <button class="btn btn-secondary" id="btnAdminRefresh" type="button">
+              <i class="bi bi-arrow-clockwise"></i> Actualizar
+            </button>
           </div>
-          <div class="dashboard-grid admin-dashboard">
-            <article class="panel-card">
-              <h3>Resumen general</h3>
-              <div id="adminSummary"></div>
+
+          <div class="admin-stats-grid" id="adminStatsGrid">
+            <article class="admin-stat-card loading-card">Cargando estadísticas...</article>
+          </div>
+
+          <div class="admin-actions admin-quick-actions">
+            <button class="btn btn-primary" id="btnAddBook" type="button"><i class="bi bi-plus-circle"></i> Agregar libro</button>
+            <button class="btn btn-secondary" id="btnViewBooks" type="button"><i class="bi bi-journal-bookmark"></i> Editar libros</button>
+            <button class="btn btn-secondary" id="btnViewLowStock" type="button"><i class="bi bi-box-seam"></i> Bajo stock</button>
+            <button class="btn btn-secondary" id="btnViewSales" type="button"><i class="bi bi-receipt"></i> Ver ventas</button>
+            <button class="btn btn-secondary" id="btnViewLoans" type="button"><i class="bi bi-calendar-check"></i> Ver préstamos</button>
+            <button class="btn btn-secondary" id="btnViewUsers" type="button"><i class="bi bi-people"></i> Ver usuarios</button>
+          </div>
+
+          <div class="admin-dashboard-grid">
+            <article class="admin-table-card">
+              <div class="admin-card-head">
+                <h3>Préstamos vencidos</h3>
+                <span id="adminOverdueCount">0</span>
+              </div>
+              <div id="adminOverdue" class="admin-table-wrap"></div>
             </article>
-            <article class="panel-card">
-              <h3>Préstamos vencidos</h3>
-              <div id="adminOverdue"></div>
+            <article class="admin-table-card">
+              <div class="admin-card-head">
+                <h3>Libros con bajo stock</h3>
+                <span id="adminLowStockCount">0</span>
+              </div>
+              <div id="adminLowStock" class="admin-table-wrap"></div>
             </article>
           </div>
-          <div class="admin-actions">
-            <button class="btn btn-primary" id="btnAddBook">Agregar libro</button>
-            <button class="btn btn-secondary" id="btnViewSales">Ver ventas</button>
-          </div>
-          <div id="adminExtra" class="admin-extra"></div>
+
+          <div id="adminExtra" class="admin-extra admin-table-card"></div>
         </section>
       </main>
 
@@ -204,12 +230,7 @@
       <aside class="side-panel">
         <section class="panel-card">
           <h3>Tu progreso de lectura</h3>
-          <p class="strong">El mapa de los días</p>
-          <p>Laura Espinosa</p>
-          <div class="progress-wrap">
-            <div class="progress-fill" style="width: 65%;"></div>
-          </div>
-          <span class="progress-text">65% completado</span>
+          <div id="progressPanelContent"></div>
         </section>
 
         <section class="panel-card">
@@ -219,9 +240,7 @@
 
         <section class="panel-card loan-card">
           <h3>Préstamo digital</h3>
-          <p class="strong">Tu próximo libro</p>
-          <p>Disponible para retiro en 2 días</p>
-          <button class="btn btn-primary action-btn">Ver mis préstamos</button>
+          <div id="digitalLoanPanelContent"></div>
         </section>
       </aside>
     </div>

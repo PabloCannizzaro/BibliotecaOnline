@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480" role="img" aria-label="Portada violeta">
+  <rect width="360" height="480" rx="28" fill="#46256d"/>
+  <path d="M0 300c74-62 148-62 222 0 44-38 90-55 138-48v228H0z" fill="#a989ff" opacity=".45"/>
+  <rect x="56" y="72" width="180" height="18" rx="9" fill="#fff" opacity=".84"/>
+  <rect x="56" y="110" width="236" height="10" rx="5" fill="#fff" opacity=".4"/>
+  <circle cx="262" cy="184" r="48" fill="#fff" opacity=".18"/>
+  <circle cx="112" cy="270" r="34" fill="#fff" opacity=".22"/>
+</svg>

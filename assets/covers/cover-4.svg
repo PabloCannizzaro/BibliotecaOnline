@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480" role="img" aria-label="Portada coral">
+  <rect width="360" height="480" rx="28" fill="#713b48"/>
+  <rect x="52" y="62" width="256" height="356" rx="24" fill="#ffb38b" opacity=".22"/>
+  <path d="M72 314h216v66H72z" fill="#fff" opacity=".72"/>
+  <path d="M72 260h216v34H72z" fill="#ffcfb6" opacity=".66"/>
+  <circle cx="108" cy="150" r="48" fill="#fff" opacity=".17"/>
+  <rect x="72" y="88" width="176" height="18" rx="9" fill="#fff" opacity=".84"/>
+</svg>

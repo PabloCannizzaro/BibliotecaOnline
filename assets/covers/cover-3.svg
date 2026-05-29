@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480" role="img" aria-label="Portada verde">
+  <rect width="360" height="480" rx="28" fill="#0d5b55"/>
+  <rect x="42" y="44" width="276" height="392" rx="22" fill="#ffffff" opacity=".1"/>
+  <path d="M92 348c24-94 68-146 132-156-3 66 18 114 64 144-70 20-136 24-196 12z" fill="#7be4c7" opacity=".76"/>
+  <rect x="66" y="82" width="150" height="18" rx="9" fill="#fff" opacity=".86"/>
+  <rect x="66" y="118" width="208" height="10" rx="5" fill="#fff" opacity=".4"/>
+</svg>

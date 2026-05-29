@@ -4,7 +4,7 @@ Guia para desplegar Biblioteca Digital en Railway con Node.js, Express y MySQL e
 
 ## Boton de deploy
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/REEMPLAZAR_USUARIO_Y_REPOSITORIO)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/PabloCannizzaro/BibliotecaOnline)
 
 TODO antes de publicar el README: reemplazar `REEMPLAZAR_USUARIO_Y_REPOSITORIO` por `USUARIO/REPOSITORIO`.
 

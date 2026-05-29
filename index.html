@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biblioteca Digital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <!-- Header principal -->
+    <header class="top-header">
+      <div class="logo-wrap">
+        <span class="logo-icon"><i class="bi bi-book-half"></i></span>
+        <div>
+          <p class="logo-title">Biblioteca Digital</p>
+          <p class="logo-subtitle">Tu espacio de lectura</p>
+        </div>
+      </div>
+
+      <button id="menuToggle" class="menu-toggle" aria-label="Abrir menú">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <nav id="mainNav" class="main-nav" aria-label="Navegación principal">
+        <a href="#catalogSection">Inicio</a>
+        <a href="#categorySection">Catálogo</a>
+        <a href="#adminSection">Administración</a>
+        <a href="#footerSection">Contacto</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-button" aria-label="Notificaciones">
+          <i class="bi bi-bell"></i>
+        </button>
+        <div class="user-pill hidden" id="userPill">
+          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80" alt="Avatar de usuario" id="userAvatar">
+          <span id="userGreeting">Hola</span>
+        </div>
+        <div class="auth-buttons" id="guestActions">
+          <button id="btnOpenLogin" class="btn btn-ghost small-btn">Iniciar sesión</button>
+          <button id="btnOpenRegister" class="btn btn-primary small-btn">Registrarse</button>
+        </div>
+        <button id="btnLogout" class="btn btn-secondary small-btn hidden">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <div class="alert-banner hidden" id="alertBanner"></div>
+
+    <!-- Layout de contenido principal + panel lateral -->
+    <div class="content-grid">
+      <main class="main-content">
+        <!-- Hero / banner principal -->
+        <section class="hero-section">
+          <div class="hero-copy">
+            <p class="hero-badge">Biblioteca online</p>
+            <h1>Explorá miles de libros digitales</h1>
+            <p>Aprendé, descubrí y disfrutá sin límites con compras y préstamos.</p>
+            <button class="btn btn-primary action-btn" id="btnExplore">Explorar catálogo</button>
+          </div>
+
+          <div class="hero-visual" aria-hidden="true">
+            <div class="visual-card">
+              <p>Lectura inteligente</p>
+              <h3>+12.500 títulos</h3>
+            </div>
+            <div class="book-shape one"></div>
+            <div class="book-shape two"></div>
+            <div class="book-shape three"></div>
+          </div>
+
+          <form id="searchForm" class="search-bar" autocomplete="off">
+            <i class="bi bi-search"></i>
+            <input id="searchInput" type="text" placeholder="Buscar libros, autores o categorías" aria-label="Buscar libros, autores o categorías">
+            <button id="searchButton" type="submit" aria-label="Buscar">
+              <i class="bi bi-arrow-right"></i>
+            </button>
+          </form>
+        </section>
+
+        <!-- Sección categorías -->
+        <section class="section-block" id="categorySection">
+          <div class="section-head">
+            <h2>Categorías</h2>
+            <a href="#" id="viewAllCategories">Ver todas</a>
+          </div>
+          <div class="category-grid" id="categoryGrid">
+            <!-- Categorías cargadas dinámicamente -->
+          </div>
+        </section>
+
+        <!-- Sección catálogo -->
+        <section class="section-block" id="catalogSection">
+          <div class="section-head">
+            <h2>Catálogo</h2>
+            <a href="#" id="clearFilters">Ver todo</a>
+          </div>
+          <div class="books-grid" id="booksGrid">
+            <!-- Libros cargados dinámicamente -->
+          </div>
+        </section>
+
+        <!-- Recomendados dinámicos -->
+        <section class="section-block">
+          <div class="section-head">
+            <h2>Recomendados para vos</h2>
+            <a href="#" id="loadRecommended">Actualizar</a>
+          </div>
+          <div class="recommended-list" id="recommendedList">
+            <!-- Recomendados dinámicos -->
+          </div>
+        </section>
+
+        <section class="section-block hidden" id="bookDetailSection">
+          <div class="section-head">
+            <h2 id="detailTitle">Detalle del libro</h2>
+            <button class="btn btn-secondary" id="closeDetail">Cerrar</button>
+          </div>
+          <div class="book-detail-card">
+            <div class="book-detail-main">
+              <div class="cover detail-cover" id="detailCover"></div>
+              <div class="book-detail-info">
+                <h3 id="detailBookTitle"></h3>
+                <p id="detailDescription"></p>
+                <div class="book-detail-meta">
+                  <span id="detailAuthors"></span>
+                  <span id="detailCategories"></span>
+                  <span id="detailPublisher"></span>
+                  <span id="detailAvailability"></span>
+                </div>
+                <div class="book-detail-prices">
+                  <div><strong>Compra:</strong> $<span id="detailPurchasePrice"></span></div>
+                  <div><strong>Alquiler:</strong> $<span id="detailRentalPrice"></span></div>
+                </div>
+                <div class="detail-actions">
+                  <button class="btn btn-primary" id="btnBuy">Comprar</button>
+                  <button class="btn btn-secondary" id="btnRent">Alquilar</button>
+                </div>
+              </div>
+            </div>
+            <div class="reviews-block">
+              <h4>Reseñas</h4>
+              <div id="reviewsList"></div>
+              <div class="review-form hidden" id="reviewFormBlock">
+                <h4>Dejar una reseña</h4>
+                <select id="reviewRating">
+                  <option value="">Calificá</option>
+                  <option value="5">★★★★★</option>
+                  <option value="4">★★★★☆</option>
+                  <option value="3">★★★☆☆</option>
+                  <option value="2">★★☆☆☆</option>
+                  <option value="1">★☆☆☆☆</option>
+                </select>
+                <textarea id="reviewComment" placeholder="Escribí tu reseña..."></textarea>
+                <button class="btn btn-primary" id="btnSubmitReview">Enviar reseña</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-block hidden" id="userSection">
+          <div class="section-head">
+            <h2>Mi cuenta</h2>
+          </div>
+          <div class="dashboard-grid">
+            <article class="panel-card">
+              <h3>Mis compras</h3>
+              <div id="userPurchases"></div>
+            </article>
+            <article class="panel-card">
+              <h3>Préstamos activos</h3>
+              <div id="userLoans"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section-block hidden" id="adminSection">
+          <div class="section-head">
+            <h2>Panel administrador</h2>
+          </div>
+          <div class="dashboard-grid admin-dashboard">
+            <article class="panel-card">
+              <h3>Resumen general</h3>
+              <div id="adminSummary"></div>
+            </article>
+            <article class="panel-card">
+              <h3>Préstamos vencidos</h3>
+              <div id="adminOverdue"></div>
+            </article>
+          </div>
+          <div class="admin-actions">
+            <button class="btn btn-primary" id="btnAddBook">Agregar libro</button>
+            <button class="btn btn-secondary" id="btnViewSales">Ver ventas</button>
+          </div>
+          <div id="adminExtra" class="admin-extra"></div>
+        </section>
+      </main>
+
+      <!-- Panel lateral derecho -->
+      <aside class="side-panel">
+        <section class="panel-card">
+          <h3>Tu progreso de lectura</h3>
+          <p class="strong">El mapa de los días</p>
+          <p>Laura Espinosa</p>
+          <div class="progress-wrap">
+            <div class="progress-fill" style="width: 65%;"></div>
+          </div>
+          <span class="progress-text">65% completado</span>
+        </section>
+
+        <section class="panel-card">
+          <h3>Estado</h3>
+          <p id="sideUserStatus">Ingresá para ver tu historial, préstamos y compras.</p>
+        </section>
+
+        <section class="panel-card loan-card">
+          <h3>Préstamo digital</h3>
+          <p class="strong">Tu próximo libro</p>
+          <p>Disponible para retiro en 2 días</p>
+          <button class="btn btn-primary action-btn">Ver mis préstamos</button>
+        </section>
+      </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer class="main-footer" id="footerSection">
+      <div class="footer-brand">
+        <div class="logo-wrap">
+          <span class="logo-icon"><i class="bi bi-book-half"></i></span>
+          <div>
+            <p class="logo-title">Biblioteca Digital</p>
+            <p class="logo-subtitle">Lectura que conecta mundos.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-links">
+        <div>
+          <h4>Explorar</h4>
+          <a href="#catalogSection">Catálogo</a>
+          <a href="#categorySection">Categorías</a>
+          <a href="#footerSection">Contacto</a>
+        </div>
+        <div>
+          <h4>Ayuda</h4>
+          <a href="#">Preguntas frecuentes</a>
+          <a href="#">Guías de uso</a>
+          <a href="#">Soporte</a>
+        </div>
+        <div>
+          <h4>Institucional</h4>
+          <a href="#">Sobre nosotros</a>
+          <a href="#">Términos y condiciones</a>
+          <a href="#">Política de privacidad</a>
+        </div>
+      </div>
+
+      <div class="footer-social">
+        <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+        <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+        <a href="#" aria-label="X"><i class="bi bi-twitter-x"></i></a>
+      </div>
+
+      <p class="copyright">© 2024 Biblioteca Digital. Todos los derechos reservados.</p>
+    </footer>
+  </div>
+
+  <div class="modal-overlay hidden" id="modalOverlay"></div>
+
+  <div class="modal hidden" id="authModal">
+    <button class="modal-close" id="closeAuthModal"><i class="bi bi-x"></i></button>
+    <h3 id="authModalTitle">Iniciar sesión</h3>
+    <form id="authForm" class="auth-form">
+      <input type="email" id="authEmail" placeholder="Correo electrónico" required>
+      <input type="password" id="authPassword" placeholder="Contraseña" required>
+      <div id="registerFields" class="hidden">
+        <input type="text" id="authFirstName" placeholder="Nombre" required>
+        <input type="text" id="authLastName" placeholder="Apellido" required>
+      </div>
+      <button class="btn btn-primary" type="submit" id="authSubmit">Ingresar</button>
+      <p class="auth-switch">¿No tenés cuenta? <a href="#" id="switchToRegister">Registrate</a></p>
+    </form>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>

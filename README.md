@@ -1,4 +1,4 @@
-<img width="2095" height="2347" alt="DER-BIBLIOTECA DIGITAL" src="https://github.com/user-attachments/assets/68b6af08-5f5a-449a-9cf3-98f27c847a65" /># Biblioteca Digital
+# Biblioteca Digital
 BIBLIOTECA DIGITAL
 Identificación del Proyecto
 Nombre del proyecto: Biblioteca Digital / Biblioteca Online

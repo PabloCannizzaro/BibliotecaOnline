@@ -104,6 +104,10 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+app.get(["/mi-cuenta", "/recomendados"], (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
 app.get("/:file", (req, res, next) => {
   const allowedFiles = new Set(["index.html", "styles.css", "script.js"]);
 

@@ -142,11 +142,15 @@ CREATE TABLE IF NOT EXISTS sales (
   total_amount DECIMAL(10,2) NOT NULL,
   status ENUM('completed','cancelled') NOT NULL DEFAULT 'completed',
   payment_method VARCHAR(60) NOT NULL DEFAULT 'tarjeta',
+  card_holder VARCHAR(120) NULL,
+  card_last4 CHAR(4) NULL,
+  payment_reference VARCHAR(64) NULL,
   FOREIGN KEY (user_id) REFERENCES users(user_id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
   INDEX ix_sales_user (user_id),
-  INDEX ix_sales_date (sale_date)
+  INDEX ix_sales_date (sale_date),
+  INDEX ix_sales_payment_reference (payment_reference)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Detalle de cada venta.
@@ -284,4 +288,33 @@ CREATE TABLE IF NOT EXISTS cart_items (
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
   INDEX ix_cart_items_cart (cart_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Notificaciones persistentes para acciones del usuario.
+CREATE TABLE IF NOT EXISTS notifications (
+  notification_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  type ENUM('purchase','loan','system') NOT NULL DEFAULT 'system',
+  title VARCHAR(120) NOT NULL,
+  message VARCHAR(255) NOT NULL,
+  related_book_id INT UNSIGNED NULL,
+  related_sale_id INT UNSIGNED NULL,
+  related_loan_id INT UNSIGNED NULL,
+  is_read TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  read_at DATETIME NULL,
+  FOREIGN KEY (user_id) REFERENCES users(user_id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE,
+  FOREIGN KEY (related_book_id) REFERENCES books(book_id)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL,
+  FOREIGN KEY (related_sale_id) REFERENCES sales(sale_id)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL,
+  FOREIGN KEY (related_loan_id) REFERENCES loans(loan_id)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL,
+  INDEX ix_notifications_user_read (user_id, is_read),
+  INDEX ix_notifications_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

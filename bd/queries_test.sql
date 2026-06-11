@@ -84,3 +84,9 @@ WHERE b.title LIKE '%viaje%'
   OR c.name LIKE '%Ciencia%'
 GROUP BY b.book_id, b.title
 ORDER BY b.title;
+
+-- 11) Ver notificaciones pendientes de un usuario
+SELECT notification_id, type, title, message, created_at
+FROM notifications
+WHERE user_id = 3 AND is_read = 0
+ORDER BY created_at DESC;

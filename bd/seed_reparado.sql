@@ -2,6 +2,7 @@ SET NAMES utf8mb4;
 USE biblioteca_digital;
 
 SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE notifications;
 TRUNCATE TABLE cart_items;
 TRUNCATE TABLE carts;
 TRUNCATE TABLE reservations;
@@ -255,6 +256,12 @@ INSERT INTO stock_movements (book_id, copy_id, quantity, movement_type, movement
 (1, NULL, 1, 'sale', NOW() - INTERVAL 12 DAY, 'Venta registrada en seed'),
 (2, NULL, 1, 'sale', NOW() - INTERVAL 9 DAY, 'Venta registrada en seed'),
 (3, NULL, 1, 'sale', NOW() - INTERVAL 5 DAY, 'Venta registrada en seed');
+
+-- Notificaciones de ejemplo
+INSERT INTO notifications (user_id, type, title, message, related_book_id, related_sale_id, related_loan_id, is_read, created_at) VALUES
+(3, 'purchase', 'Compra confirmada', 'Has comprado el libro La casa del faro.', 1, 1, NULL, 0, NOW() - INTERVAL 12 DAY),
+(4, 'purchase', 'Compra confirmada', 'Has comprado el libro Sombras de ciudad.', 2, 2, NULL, 1, NOW() - INTERVAL 9 DAY),
+(6, 'loan', 'Prestamo registrado', 'Has alquilado el libro La casa del faro.', 1, NULL, 1, 0, NOW() - INTERVAL 8 DAY);
 
 -- Reservas de ejemplo
 INSERT INTO reservations (user_id, book_id, reserved_at, expires_at, status) VALUES

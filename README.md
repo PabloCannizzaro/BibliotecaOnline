@@ -230,6 +230,8 @@ La comunicación con la base de datos se realiza mediante consultas SQL parametr
 | POST   | `/api/user/loans`     | Registra un préstamo.                 |
 | GET    | `/api/user/purchases` | Lista compras del usuario.            |
 | GET    | `/api/user/loans`     | Lista préstamos activos o históricos. |
+| GET    | `/api/user/notifications` | Lista notificaciones del usuario. |
+| PATCH  | `/api/user/notifications/read` | Marca notificaciones como leídas. |
 
 ---
 
@@ -256,7 +258,7 @@ La comunicación con la base de datos se realiza mediante consultas SQL parametr
 
 ## Modelo de Datos
 
-La base de datos está compuesta por 19 tablas principales:
+La base de datos está compuesta por 20 tablas principales:
 
 * `roles`
 * `users`
@@ -277,6 +279,7 @@ La base de datos está compuesta por 19 tablas principales:
 * `reservations`
 * `carts`
 * `cart_items`
+* `notifications`
 
 ---
 

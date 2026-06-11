@@ -6,11 +6,22 @@
 2. Ejecutar `seed_reparado.sql` despues del esquema para cargar datos de prueba.
 3. Ejecutar `queries_test.sql` para validar consultas principales.
 
+Si la base ya existe antes de estos cambios, ejecutar una sola vez:
+
+```sql
+bd/migration_notifications_and_card_payments.sql
+```
+
+La migracion agrega metadatos no sensibles de pago en `sales` y la tabla `notifications`.
+No se almacena numero completo de tarjeta ni CVV.
+
 ## Orden correcto
 
 1. `schema_reparado.sql`
 2. `seed_reparado.sql`
 3. `queries_test.sql`
+
+Para bases existentes: ejecutar primero `migration_notifications_and_card_payments.sql` y luego desplegar el backend actualizado.
 
 ## Variables del backend
 

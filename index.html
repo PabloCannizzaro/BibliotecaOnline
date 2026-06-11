@@ -27,17 +27,28 @@
       </button>
 
       <nav id="mainNav" class="main-nav" aria-label="Navegación principal">
-        <a href="#homeSection">Inicio</a>
-        <a href="#catalogSection">Catálogo</a>
-        <a href="#footerSection">Contacto</a>
-        <a href="#userSection" id="userNavLink" class="hidden">Mi cuenta</a>
+        <a href="/" data-route="/">Inicio</a>
+        <a href="/#catalogSection" data-scroll-target="catalogSection">Catálogo</a>
+        <a href="/recomendados" data-route="/recomendados">Recomendados</a>
+        <a href="/#footerSection" data-scroll-target="footerSection">Contacto</a>
+        <a href="/mi-cuenta" id="userNavLink" class="hidden" data-route="/mi-cuenta">Mi cuenta</a>
         <a href="#adminSection" id="adminNavLink" class="hidden">Administración</a>
       </nav>
 
       <div class="header-actions">
-        <button class="icon-button" aria-label="Notificaciones">
-          <i class="bi bi-bell"></i>
-        </button>
+        <div class="notification-wrap">
+          <button class="icon-button notification-button" id="notificationButton" aria-label="Notificaciones" aria-expanded="false" type="button">
+            <i class="bi bi-bell"></i>
+            <span class="notification-badge hidden" id="notificationBadge">0</span>
+          </button>
+          <div class="notification-panel hidden" id="notificationPanel">
+            <div class="notification-head">
+              <strong>Notificaciones</strong>
+              <button type="button" id="markNotificationsRead" class="link-button">Marcar leidas</button>
+            </div>
+            <div id="notificationList" class="notification-list"></div>
+          </div>
+        </div>
         <div class="user-pill hidden" id="userPill">
           <img src="assets/user-avatar.svg" alt="Avatar de usuario" id="userAvatar">
           <span id="userGreeting">Hola</span>
@@ -106,7 +117,7 @@
         </section>
 
         <!-- Recomendados dinámicos -->
-        <section class="section-block">
+        <section class="section-block" id="recommendedSection">
           <div class="section-head">
             <h2>Recomendados para vos</h2>
             <a href="#" id="loadRecommended">Actualizar</a>
@@ -176,6 +187,10 @@
             <article class="panel-card">
               <h3>Préstamos activos</h3>
               <div id="userLoans"></div>
+            </article>
+            <article class="panel-card">
+              <h3>Historial</h3>
+              <div id="userHistory"></div>
             </article>
           </div>
         </section>
@@ -302,6 +317,44 @@
       </div>
       <button class="btn btn-primary" type="submit" id="authSubmit">Ingresar</button>
       <p class="auth-switch">¿No tenés cuenta? <a href="#" id="switchToRegister">Registrate</a></p>
+    </form>
+  </div>
+
+  <div class="modal purchase-modal hidden" id="purchaseModal" role="dialog" aria-modal="true" aria-labelledby="purchaseModalTitle">
+    <button class="modal-close" id="closePurchaseModal" type="button"><i class="bi bi-x"></i></button>
+    <div class="purchase-modal-head">
+      <span class="modal-icon"><i class="bi bi-credit-card-2-front"></i></span>
+      <div>
+        <p class="modal-kicker">Compra segura</p>
+        <h3 id="purchaseModalTitle">Confirmar compra</h3>
+      </div>
+    </div>
+    <div class="purchase-summary" id="purchaseSummary"></div>
+    <form id="purchaseForm" class="auth-form payment-form" novalidate>
+      <label class="field-group">
+        <span>Número de tarjeta</span>
+        <input type="text" id="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="23">
+        <small class="field-error" id="cardNumberError"></small>
+      </label>
+      <label class="field-group">
+        <span>Nombre del titular</span>
+        <input type="text" id="cardHolder" autocomplete="cc-name" placeholder="Como figura en la tarjeta">
+        <small class="field-error" id="cardHolderError"></small>
+      </label>
+      <div class="form-grid">
+        <label class="field-group">
+          <span>Vencimiento</span>
+          <input type="text" id="cardExpiration" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="7">
+          <small class="field-error" id="cardExpirationError"></small>
+        </label>
+        <label class="field-group">
+          <span>CVV</span>
+          <input type="password" id="cardCvv" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4">
+          <small class="field-error" id="cardCvvError"></small>
+        </label>
+      </div>
+      <p class="payment-note">No almacenamos el número completo de tarjeta ni el CVV.</p>
+      <button class="btn btn-primary purchase-confirm" type="submit" id="confirmPurchase" disabled>Confirmar compra</button>
     </form>
   </div>
 

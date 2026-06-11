@@ -10,6 +10,10 @@ const coverAssets = [
 
 const menuToggle = document.getElementById("menuToggle");
 const mainNav = document.getElementById("mainNav");
+const homeSection = document.getElementById("homeSection");
+const categorySection = document.getElementById("categorySection");
+const catalogSection = document.getElementById("catalogSection");
+const recommendedSection = document.getElementById("recommendedSection");
 const userNavLink = document.getElementById("userNavLink");
 const adminNavLink = document.getElementById("adminNavLink");
 const searchForm = document.getElementById("searchForm");
@@ -36,6 +40,7 @@ const userSection = document.getElementById("userSection");
 const userProfileSummary = document.getElementById("userProfileSummary");
 const userPurchases = document.getElementById("userPurchases");
 const userLoans = document.getElementById("userLoans");
+const userHistory = document.getElementById("userHistory");
 const adminSection = document.getElementById("adminSection");
 const adminStatsGrid = document.getElementById("adminStatsGrid");
 const adminOverdue = document.getElementById("adminOverdue");
@@ -59,6 +64,11 @@ const guestActions = document.getElementById("guestActions");
 const btnLogout = document.getElementById("btnLogout");
 const btnOpenLogin = document.getElementById("btnOpenLogin");
 const btnOpenRegister = document.getElementById("btnOpenRegister");
+const notificationButton = document.getElementById("notificationButton");
+const notificationBadge = document.getElementById("notificationBadge");
+const notificationPanel = document.getElementById("notificationPanel");
+const notificationList = document.getElementById("notificationList");
+const markNotificationsRead = document.getElementById("markNotificationsRead");
 const authModal = document.getElementById("authModal");
 const modalOverlay = document.getElementById("modalOverlay");
 const closeAuthModal = document.getElementById("closeAuthModal");
@@ -80,6 +90,19 @@ const reviewFormBlock = document.getElementById("reviewFormBlock");
 const reviewRating = document.getElementById("reviewRating");
 const reviewComment = document.getElementById("reviewComment");
 const btnSubmitReview = document.getElementById("btnSubmitReview");
+const purchaseModal = document.getElementById("purchaseModal");
+const closePurchaseModal = document.getElementById("closePurchaseModal");
+const purchaseSummary = document.getElementById("purchaseSummary");
+const purchaseForm = document.getElementById("purchaseForm");
+const cardNumber = document.getElementById("cardNumber");
+const cardHolder = document.getElementById("cardHolder");
+const cardExpiration = document.getElementById("cardExpiration");
+const cardCvv = document.getElementById("cardCvv");
+const confirmPurchase = document.getElementById("confirmPurchase");
+const cardNumberError = document.getElementById("cardNumberError");
+const cardHolderError = document.getElementById("cardHolderError");
+const cardExpirationError = document.getElementById("cardExpirationError");
+const cardCvvError = document.getElementById("cardCvvError");
 
 let toastTimer;
 let currentBook = null;
@@ -89,6 +112,8 @@ let currentUser = null;
 let authMode = "login";
 let latestBooks = [];
 let currentAdminBooks = [];
+let latestNotifications = [];
+let purchaseSubmitting = false;
 
 function getToken() {
   return localStorage.getItem("biblioteca_token");
@@ -178,6 +203,221 @@ function renderLoading(message) {
   return `<div class="loading-state"><span class="loader-dot"></span>${escapeHtml(message)}</div>`;
 }
 
+function isAccountRoute() {
+  return window.location.pathname === "/mi-cuenta";
+}
+
+function isRecommendedRoute() {
+  return window.location.pathname === "/recomendados";
+}
+
+function applyRouteView() {
+  const accountRoute = isAccountRoute();
+  const recommendedRoute = isRecommendedRoute();
+  const focusedRoute = accountRoute || recommendedRoute;
+
+  document.body.dataset.view = accountRoute ? "account" : recommendedRoute ? "recommended" : "home";
+
+  [homeSection, categorySection, catalogSection].forEach(section => {
+    section?.classList.toggle("route-hidden", focusedRoute);
+  });
+
+  recommendedSection?.classList.toggle("route-hidden", accountRoute);
+  userSection?.classList.toggle("route-hidden", !accountRoute);
+  adminSection?.classList.toggle("route-hidden", accountRoute || recommendedRoute);
+  bookDetailSection?.classList.toggle("route-hidden", focusedRoute);
+
+  if (accountRoute && !currentUser) {
+    renderAccountGuest();
+  }
+
+  if (recommendedRoute) {
+    loadRecommendedBooks();
+  }
+}
+
+function navigateTo(path, scrollTarget = "") {
+  if (window.location.pathname !== path) {
+    window.history.pushState({}, "", path);
+  }
+
+  applyRouteView();
+
+  if (scrollTarget) {
+    document.getElementById(scrollTarget)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+function onlyDigits(value = "") {
+  return String(value).replace(/\D/g, "");
+}
+
+function passesLuhn(number) {
+  let sum = 0;
+  let shouldDouble = false;
+
+  for (let i = number.length - 1; i >= 0; i -= 1) {
+    let digit = Number(number[i]);
+
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+
+  return sum % 10 === 0;
+}
+
+function parseExpiration(value = "") {
+  const match = String(value).trim().match(/^(\d{2})\s*\/\s*(\d{2}|\d{4})$/);
+  if (!match) return null;
+
+  const month = Number(match[1]);
+  const year = Number(match[2].length === 2 ? `20${match[2]}` : match[2]);
+  if (month < 1 || month > 12) return null;
+
+  return { month, year };
+}
+
+function validatePaymentForm() {
+  const errors = {};
+  const digits = onlyDigits(cardNumber?.value);
+  const holder = cardHolder?.value.trim() || "";
+  const expiration = parseExpiration(cardExpiration?.value);
+  const cvv = onlyDigits(cardCvv?.value);
+
+  if (!/^\d{13,19}$/.test(digits) || !passesLuhn(digits)) {
+    errors.cardNumber = "El numero de tarjeta no es valido";
+  }
+
+  if (holder.length < 3 || !/[a-zA-Z]/.test(holder)) {
+    errors.cardHolder = "Ingresa el nombre del titular";
+  }
+
+  if (!expiration) {
+    errors.cardExpiration = "Usa el formato MM/AA";
+  } else {
+    const expiresAt = new Date(expiration.year, expiration.month, 0, 23, 59, 59);
+    if (expiresAt < new Date()) {
+      errors.cardExpiration = "La tarjeta esta vencida";
+    }
+  }
+
+  if (!/^\d{3,4}$/.test(cvv)) {
+    errors.cardCvv = "El CVV debe tener 3 o 4 digitos";
+  }
+
+  return { ok: Object.keys(errors).length === 0, errors };
+}
+
+function paintPaymentErrors(errors = {}) {
+  const fieldMap = [
+    [cardNumber, cardNumberError, errors.cardNumber],
+    [cardHolder, cardHolderError, errors.cardHolder],
+    [cardExpiration, cardExpirationError, errors.cardExpiration],
+    [cardCvv, cardCvvError, errors.cardCvv]
+  ];
+
+  fieldMap.forEach(([field, errorNode, message]) => {
+    field?.classList.toggle("field-invalid", Boolean(message));
+    field?.classList.toggle("field-valid", field.value.trim() && !message);
+    if (errorNode) errorNode.textContent = message || "";
+  });
+
+  const ready = Object.keys(errors).length === 0;
+  confirmPurchase.disabled = !ready || purchaseSubmitting;
+  confirmPurchase.classList.toggle("ready", ready && !purchaseSubmitting);
+}
+
+function updatePaymentState() {
+  if (!purchaseForm) return;
+  paintPaymentErrors(validatePaymentForm().errors);
+}
+
+function formatCardNumberInput() {
+  const digits = onlyDigits(cardNumber.value).slice(0, 19);
+  cardNumber.value = digits.replace(/(.{4})/g, "$1 ").trim();
+}
+
+function formatExpirationInput() {
+  const digits = onlyDigits(cardExpiration.value).slice(0, 6);
+  if (digits.length <= 2) {
+    cardExpiration.value = digits;
+    return;
+  }
+  cardExpiration.value = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+}
+
+function renderAccountGuest() {
+  userSection?.classList.remove("hidden");
+  userProfileSummary.innerHTML = renderEmpty("Inicia sesion para ver tu perfil, compras, prestamos e historial.", "Iniciar sesion");
+  userPurchases.innerHTML = renderEmpty("Tus compras apareceran aca despues de iniciar sesion.");
+  userLoans.innerHTML = renderEmpty("Tus prestamos activos apareceran aca despues de iniciar sesion.");
+  if (userHistory) userHistory.innerHTML = renderEmpty("Tu historial aparecera aca despues de iniciar sesion.");
+}
+
+function updateNotificationBadge(count = 0) {
+  const normalizedCount = Number(count || 0);
+  notificationBadge.textContent = String(normalizedCount);
+  notificationBadge.classList.toggle("hidden", normalizedCount <= 0);
+}
+
+function renderNotifications() {
+  if (!currentUser) {
+    notificationList.innerHTML = renderEmpty("Inicia sesion para ver tus notificaciones.", "Iniciar sesion");
+    return;
+  }
+
+  if (!latestNotifications.length) {
+    notificationList.innerHTML = renderEmpty("No tenes notificaciones por ahora.");
+    return;
+  }
+
+  notificationList.innerHTML = latestNotifications.map(item => `
+    <article class="notification-item ${item.is_read ? "is-read" : "is-unread"}">
+      <span class="notification-dot"></span>
+      <div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <p>${escapeHtml(item.message)}</p>
+        <small>${escapeHtml(formatDate(item.created_at))}</small>
+      </div>
+    </article>
+  `).join("");
+}
+
+async function loadNotifications() {
+  if (!currentUser) {
+    latestNotifications = [];
+    updateNotificationBadge(0);
+    renderNotifications();
+    return;
+  }
+
+  const res = await request("/user/notifications");
+  if (!res.ok) {
+    notificationList.innerHTML = renderEmpty("No se pudieron cargar las notificaciones.");
+    return;
+  }
+
+  const data = await res.json();
+  latestNotifications = data.notifications || [];
+  updateNotificationBadge(data.unread_count || 0);
+  renderNotifications();
+}
+
+async function markAllNotificationsRead() {
+  if (!currentUser) return;
+  const res = await request("/user/notifications/read", { method: "PATCH" });
+  if (res.ok) {
+    await loadNotifications();
+  }
+}
+
 function updateNavForSession() {
   const isLogged = Boolean(currentUser);
   const isAdmin = currentUser?.role_name === "admin";
@@ -238,6 +478,50 @@ function closeModal() {
   modalOverlay.classList.add("hidden");
 }
 
+function openPurchaseModal() {
+  if (!currentUser) {
+    showAlert("Debes iniciar sesion para comprar", "error");
+    openLoginModal();
+    return;
+  }
+
+  const title = currentBook?.title || "Libro seleccionado";
+  const price = currentBook?.purchase_price || 0;
+
+  purchaseSummary.innerHTML = `
+    <div>
+      <span>Libro</span>
+      <strong>${escapeHtml(title)}</strong>
+    </div>
+    <div>
+      <span>Cantidad</span>
+      <strong>1 unidad</strong>
+    </div>
+    <div>
+      <span>Total</span>
+      <strong>${formatMoney(price)}</strong>
+    </div>
+  `;
+
+  purchaseForm.reset();
+  purchaseSubmitting = false;
+  paintPaymentErrors({
+    cardNumber: "Completa el numero de tarjeta",
+    cardHolder: "Ingresa el nombre del titular",
+    cardExpiration: "Usa el formato MM/AA",
+    cardCvv: "El CVV debe tener 3 o 4 digitos"
+  });
+  purchaseModal.classList.remove("hidden");
+  modalOverlay.classList.remove("hidden");
+  cardNumber.focus();
+}
+
+function closePurchase() {
+  purchaseModal.classList.add("hidden");
+  modalOverlay.classList.add("hidden");
+  purchaseSubmitting = false;
+}
+
 function openLoginModal() {
   setAuthMode("login");
   openModal();
@@ -283,7 +567,7 @@ async function loadCategories() {
     card.addEventListener("click", () => {
       filterCategory = card.dataset.id;
       loadBooks(lastSearch, filterCategory);
-      document.getElementById("catalogSection").scrollIntoView({ behavior: "smooth" });
+      navigateTo("/", "catalogSection");
     });
   });
 }
@@ -429,7 +713,10 @@ async function toggleUserState() {
     btnLogout.classList.add("hidden");
     userSection.classList.add("hidden");
     adminSection.classList.add("hidden");
+    notificationPanel.classList.add("hidden");
     renderGuestPanels();
+    await loadNotifications();
+    applyRouteView();
     return;
   }
 
@@ -457,6 +744,7 @@ async function toggleUserState() {
   `;
 
   await loadUserData();
+  await loadNotifications();
 
   if (currentUser.role_name === "admin") {
     adminSection.classList.remove("hidden");
@@ -464,15 +752,19 @@ async function toggleUserState() {
   } else {
     adminSection.classList.add("hidden");
   }
+
+  applyRouteView();
 }
 
 async function loadUserData() {
   userPurchases.innerHTML = renderLoading("Cargando compras...");
   userLoans.innerHTML = renderLoading("Cargando préstamos...");
+  if (userHistory) userHistory.innerHTML = renderLoading("Cargando historial...");
 
-  const [purchasesRes, loansRes] = await Promise.all([
+  const [purchasesRes, loansRes, historyRes] = await Promise.all([
     request("/user/purchases"),
-    request("/user/loans?status=active")
+    request("/user/loans?status=active"),
+    request("/user/loans?status=history")
   ]);
 
   if (purchasesRes.ok) {
@@ -482,6 +774,7 @@ async function loadUserData() {
         <strong>${escapeHtml(item.title)}</strong>
         <p>${escapeHtml(formatDate(item.sale_date))} - ${Number(item.quantity)} unidad(es)</p>
         <p>Total: ${formatMoney(item.total_amount)}</p>
+        ${item.card_last4 ? `<p>Tarjeta terminada en ${escapeHtml(item.card_last4)}</p>` : ""}
       </div>
     `).join("") : renderEmpty("Aún no realizaste compras.");
   } else {
@@ -503,6 +796,21 @@ async function loadUserData() {
   }
 
   renderLoggedPanels(loans);
+
+  if (userHistory) {
+    if (historyRes.ok) {
+      const history = await historyRes.json();
+      userHistory.innerHTML = history.length ? history.map(item => `
+        <div class="review-card">
+          <strong>${escapeHtml(item.title)}</strong>
+          <p>Fecha: ${escapeHtml(formatDate(item.loan_date))}</p>
+          <p>Estado: ${escapeHtml(item.status)}</p>
+        </div>
+      `).join("") : renderEmpty("Todavia no hay historial para mostrar.");
+    } else {
+      userHistory.innerHTML = renderEmpty("No se pudo cargar tu historial.");
+    }
+  }
 }
 
 function renderStats(stats = {}) {
@@ -891,7 +1199,7 @@ async function showSales() {
   }
   const sales = await res.json();
   setAdminExtra("Ventas registradas", table(
-    ["ID", "Usuario", "Total", "Fecha", "Estado"],
+    ["ID", "Usuario", "Total", "Fecha", "Pago", "Estado"],
     sales,
     row => `
       <tr>
@@ -899,6 +1207,7 @@ async function showSales() {
         <td>${escapeHtml(row.first_name)} ${escapeHtml(row.last_name)}</td>
         <td>${formatMoney(row.total_amount)}</td>
         <td>${escapeHtml(formatDate(row.sale_date))}</td>
+        <td>${escapeHtml(row.card_last4 ? `Tarjeta **** ${row.card_last4}` : row.payment_method || "N/A")}</td>
         <td><span class="status-badge success">${escapeHtml(row.status)}</span></td>
       </tr>
     `,
@@ -958,22 +1267,67 @@ async function showUsers() {
 
 async function handlePurchase() {
   if (!currentUser) {
-    showAlert("Debés iniciar sesión para comprar", "error");
+    showAlert("Debes iniciar sesion para comprar", "error");
     openLoginModal();
     return;
   }
-  const res = await request("/user/purchases", {
-    method: "POST",
-    body: JSON.stringify({ book_id: currentBook.book_id, quantity: 1 })
-  });
-  const result = await res.json();
-  if (!res.ok) {
-    showAlert(result.error || "No se pudo procesar la compra", "error");
+
+  openPurchaseModal();
+}
+
+async function handlePurchaseSubmit(event) {
+  event.preventDefault();
+
+  const validation = validatePaymentForm();
+  paintPaymentErrors(validation.errors);
+
+  if (!validation.ok || purchaseSubmitting) {
     return;
   }
-  showToast(result.message);
-  await loadBooks(lastSearch, filterCategory);
-  await loadUserData();
+
+  purchaseSubmitting = true;
+  confirmPurchase.disabled = true;
+  confirmPurchase.textContent = "Procesando...";
+
+  const res = await request("/user/purchases", {
+    method: "POST",
+    body: JSON.stringify({
+      book_id: currentBook.book_id,
+      quantity: 1,
+      payment: {
+        card_number: onlyDigits(cardNumber.value),
+        card_holder: cardHolder.value.trim(),
+        expiration: cardExpiration.value.trim(),
+        cvv: onlyDigits(cardCvv.value)
+      }
+    })
+  });
+  const result = await res.json();
+
+  purchaseSubmitting = false;
+  confirmPurchase.textContent = "Confirmar compra";
+
+  if (!res.ok) {
+    const fieldErrors = result.field_errors || {};
+    paintPaymentErrors({
+      cardNumber: fieldErrors.card_number,
+      cardHolder: fieldErrors.card_holder,
+      cardExpiration: fieldErrors.expiration,
+      cardCvv: fieldErrors.cvv
+    });
+    showAlert(result.error || "No se pudo procesar la compra", "error");
+    updatePaymentState();
+    return;
+  }
+
+  closePurchase();
+  showToast(result.message || "Compra registrada con exito");
+  showAlert("Compra realizada correctamente", "success");
+  await Promise.all([loadBooks(lastSearch, filterCategory), loadRecommendedBooks(), loadUserData(), loadNotifications()]);
+
+  if (!bookDetailSection.classList.contains("hidden") && currentBook?.book_id) {
+    await openBookDetail(currentBook.book_id);
+  }
 }
 
 async function handleRent() {
@@ -994,6 +1348,7 @@ async function handleRent() {
   showToast(result.message);
   await loadBooks(lastSearch, filterCategory);
   await loadUserData();
+  await loadNotifications();
 }
 
 async function handleReviewSubmit() {
@@ -1070,13 +1425,36 @@ async function handleAuthSubmit(event) {
 }
 
 document.addEventListener("click", event => {
+  const routeLink = event.target.closest("[data-route]");
+  if (routeLink) {
+    event.preventDefault();
+    navigateTo(new URL(routeLink.href, window.location.origin).pathname);
+    mainNav?.classList.remove("open");
+    menuToggle?.setAttribute("aria-expanded", "false");
+    return;
+  }
+
+  const scrollLink = event.target.closest("[data-scroll-target]");
+  if (scrollLink) {
+    event.preventDefault();
+    navigateTo("/", scrollLink.dataset.scrollTarget);
+    mainNav?.classList.remove("open");
+    menuToggle?.setAttribute("aria-expanded", "false");
+    return;
+  }
+
   const action = event.target.closest("[data-panel-action]")?.dataset.panelAction;
   if (action === "login") openLoginModal();
-  if (action === "user-loans") userSection.scrollIntoView({ behavior: "smooth" });
+  if (action === "user-loans") navigateTo("/mi-cuenta");
+
+  if (!event.target.closest(".notification-wrap")) {
+    notificationPanel?.classList.add("hidden");
+    notificationButton?.setAttribute("aria-expanded", "false");
+  }
 });
 
 btnExplore?.addEventListener("click", () => {
-  document.getElementById("catalogSection").scrollIntoView({ behavior: "smooth" });
+  navigateTo("/", "catalogSection");
 });
 
 searchForm?.addEventListener("submit", event => {
@@ -1113,19 +1491,53 @@ switchToRegister?.addEventListener("click", event => {
   setAuthMode(event.target.dataset.mode === "register" ? "register" : "login");
 });
 closeAuthModal?.addEventListener("click", closeModal);
-modalOverlay?.addEventListener("click", closeModal);
+modalOverlay?.addEventListener("click", () => {
+  closeModal();
+  closePurchase();
+});
 authForm?.addEventListener("submit", handleAuthSubmit);
 closeDetail?.addEventListener("click", () => bookDetailSection.classList.add("hidden"));
 btnBuy?.addEventListener("click", handlePurchase);
 btnRent?.addEventListener("click", handleRent);
 btnSubmitReview?.addEventListener("click", handleReviewSubmit);
+closePurchaseModal?.addEventListener("click", closePurchase);
+purchaseForm?.addEventListener("submit", handlePurchaseSubmit);
+cardNumber?.addEventListener("input", () => {
+  formatCardNumberInput();
+  updatePaymentState();
+});
+cardHolder?.addEventListener("input", updatePaymentState);
+cardExpiration?.addEventListener("input", () => {
+  formatExpirationInput();
+  updatePaymentState();
+});
+cardCvv?.addEventListener("input", () => {
+  cardCvv.value = onlyDigits(cardCvv.value).slice(0, 4);
+  updatePaymentState();
+});
+notificationButton?.addEventListener("click", async event => {
+  event.stopPropagation();
+  if (!currentUser) {
+    openLoginModal();
+    return;
+  }
+  const isHidden = notificationPanel.classList.toggle("hidden");
+  notificationButton.setAttribute("aria-expanded", String(!isHidden));
+  if (!isHidden) await loadNotifications();
+});
+notificationPanel?.addEventListener("click", event => event.stopPropagation());
+markNotificationsRead?.addEventListener("click", markAllNotificationsRead);
 btnLogout?.addEventListener("click", async () => {
   clearToken();
   await toggleUserState();
   showToast("Sesión cerrada");
 });
 
-adminNavLink?.addEventListener("click", () => loadAdminDashboard());
+adminNavLink?.addEventListener("click", event => {
+  event.preventDefault();
+  navigateTo("/", "adminSection");
+  loadAdminDashboard();
+});
 btnAdminRefresh?.addEventListener("click", loadAdminDashboard);
 btnAddBookElem?.addEventListener("click", showAddBookForm);
 btnViewBooks?.addEventListener("click", showAdminBooks);
@@ -1133,6 +1545,7 @@ btnViewLowStock?.addEventListener("click", showLowStock);
 btnViewSales?.addEventListener("click", showSales);
 btnViewLoans?.addEventListener("click", showLoans);
 btnViewUsers?.addEventListener("click", showUsers);
+window.addEventListener("popstate", applyRouteView);
 
 async function init() {
   setAuthMode("login");

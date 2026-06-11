@@ -21,6 +21,7 @@
 - reservations: reservas de libros realizadas por usuarios.
 - carts: carrito de compras de cada usuario.
 - cart_items: detalle de artículos en el carrito.
+- notifications: notificaciones persistentes para compras, prestamos y mensajes del sistema.
 
 ## Relaciones entre entidades
 
@@ -49,6 +50,10 @@
 - carts.user_id -> users.user_id
 - cart_items.cart_id -> carts.cart_id
 - cart_items.book_id -> books.book_id
+- notifications.user_id -> users.user_id
+- notifications.related_book_id -> books.book_id
+- notifications.related_sale_id -> sales.sale_id
+- notifications.related_loan_id -> loans.loan_id
 
 ## Cardinalidades
 
@@ -61,10 +66,11 @@
 - Un préstamo puede contener múltiples ejemplares prestados.
 - Un usuario puede tener múltiples préstamos y ventas.
 - Un ejemplar solo pertenece a un libro.
+- Una notificacion pertenece a un usuario y puede referenciar opcionalmente un libro, una venta o un prestamo.
 
 ## Claves primarias y foráneas
 
-- Cada tabla principal usa un identificador entero auto incremental: role_id, user_id, author_id, publisher_id, category_id, book_id, copy_id, price_history_id, sale_id, sale_item_id, loan_id, loan_item_id, review_id, movement_id, reservation_id, cart_id, cart_item_id.
+- Cada tabla principal usa un identificador entero auto incremental: role_id, user_id, author_id, publisher_id, category_id, book_id, copy_id, price_history_id, sale_id, sale_item_id, loan_id, loan_item_id, review_id, movement_id, reservation_id, cart_id, cart_item_id, notification_id.
 - Las tablas de relación book_authors y book_categories usan claves primarias compuestas para garantizar unicidad y evitar duplicados.
 - Las foráneas mantienen la integridad referencial, por ejemplo copies.book_id referencia books.book_id y no permite eliminar un libro con ejemplares dependientes sin ajustar antes.
 

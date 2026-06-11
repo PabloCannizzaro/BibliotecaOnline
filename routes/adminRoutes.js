@@ -246,7 +246,8 @@ router.get("/users", async (req, res) => {
 router.get("/sales", async (req, res) => {
   try {
     const [sales] = await pool.query(
-      `SELECT s.sale_id, s.sale_date, s.total_amount, s.status, s.payment_method, u.first_name, u.last_name
+      `SELECT s.sale_id, s.sale_date, s.total_amount, s.status, s.payment_method,
+        s.card_last4, s.payment_reference, u.first_name, u.last_name
        FROM sales s
        JOIN users u ON s.user_id = u.user_id
        ORDER BY s.sale_date DESC`

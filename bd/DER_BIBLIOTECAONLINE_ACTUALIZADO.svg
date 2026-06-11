@@ -1,0 +1,251 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1220" viewBox="0 0 1800 1220" role="img" aria-label="DER Biblioteca Digital actualizado">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .table { fill: #ffffff; stroke: #c7d0dc; stroke-width: 1.4; rx: 8; }
+      .head { fill: #2f6f9f; }
+      .headText { fill: #ffffff; font: 700 14px Arial, sans-serif; }
+      .field { fill: #334155; font: 12px Arial, sans-serif; }
+      .pk { font-weight: 700; }
+      .line { fill: none; stroke: #94a3b8; stroke-width: 1.2; }
+    </style>
+  </defs>
+  <rect class="bg" width="1800" height="1220"/>
+
+  <!-- Relationship lines -->
+  <path class="line" d="M230 132 H340 V198 H450"/>
+  <path class="line" d="M230 302 H340 V250 H450"/>
+  <path class="line" d="M230 472 H350 V520 H450"/>
+  <path class="line" d="M680 216 H780 V92 H920"/>
+  <path class="line" d="M680 260 H780 V230 H920"/>
+  <path class="line" d="M680 304 H790 V370 H920"/>
+  <path class="line" d="M680 348 H800 V520 H920"/>
+  <path class="line" d="M680 392 H800 V665 H920"/>
+  <path class="line" d="M680 430 H810 V812 H920"/>
+  <path class="line" d="M680 828 H800 V940 H920"/>
+  <path class="line" d="M680 828 H780 V1080 H920"/>
+  <path class="line" d="M1150 240 H1270 V92 H1390"/>
+  <path class="line" d="M1150 392 H1270 V230 H1390"/>
+  <path class="line" d="M1150 548 H1270 V390 H1390"/>
+  <path class="line" d="M1150 684 H1270 V545 H1390"/>
+  <path class="line" d="M1150 842 H1270 V700 H1390"/>
+  <path class="line" d="M1150 986 H1270 V875 H1390"/>
+  <path class="line" d="M1150 1122 H1280 V700 H1390"/>
+  <path class="line" d="M680 828 H1330 V700 H1390"/>
+  <path class="line" d="M680 828 H1330 V875 H1390"/>
+  <path class="line" d="M680 392 H1320 V875 H1390"/>
+  <path class="line" d="M680 392 H1320 V390 H1390"/>
+
+  <!-- Left catalog tables -->
+  <g transform="translate(40 60)">
+    <rect class="table" width="190" height="120"/>
+    <rect class="head" width="190" height="28"/>
+    <text class="headText" x="10" y="19">authors</text>
+    <text class="field pk" x="10" y="50">author_id PK</text>
+    <text class="field" x="10" y="72">name</text>
+    <text class="field" x="10" y="94">biography</text>
+    <text class="field" x="10" y="116">country</text>
+  </g>
+
+  <g transform="translate(40 230)">
+    <rect class="table" width="190" height="104"/>
+    <rect class="head" width="190" height="28"/>
+    <text class="headText" x="10" y="19">categories</text>
+    <text class="field pk" x="10" y="50">category_id PK</text>
+    <text class="field" x="10" y="72">name</text>
+    <text class="field" x="10" y="94">description</text>
+  </g>
+
+  <g transform="translate(40 400)">
+    <rect class="table" width="190" height="104"/>
+    <rect class="head" width="190" height="28"/>
+    <text class="headText" x="10" y="19">publishers</text>
+    <text class="field pk" x="10" y="50">publisher_id PK</text>
+    <text class="field" x="10" y="72">name</text>
+    <text class="field" x="10" y="94">website, country</text>
+  </g>
+
+  <g transform="translate(40 570)">
+    <rect class="table" width="190" height="88"/>
+    <rect class="head" width="190" height="28"/>
+    <text class="headText" x="10" y="19">roles</text>
+    <text class="field pk" x="10" y="50">role_id PK</text>
+    <text class="field" x="10" y="72">role_name, description</text>
+  </g>
+
+  <!-- Core tables -->
+  <g transform="translate(450 170)">
+    <rect class="table" width="230" height="300"/>
+    <rect class="head" width="230" height="28"/>
+    <text class="headText" x="10" y="19">books</text>
+    <text class="field pk" x="10" y="50">book_id PK</text>
+    <text class="field" x="10" y="72">title</text>
+    <text class="field" x="10" y="94">description</text>
+    <text class="field" x="10" y="116">publisher_id FK</text>
+    <text class="field" x="10" y="138">publication_year</text>
+    <text class="field" x="10" y="160">purchase_price</text>
+    <text class="field" x="10" y="182">rental_price</text>
+    <text class="field" x="10" y="204">stock_minimum</text>
+    <text class="field" x="10" y="226">is_active</text>
+    <text class="field" x="10" y="248">created_at</text>
+    <text class="field" x="10" y="270">updated_at</text>
+  </g>
+
+  <g transform="translate(450 730)">
+    <rect class="table" width="230" height="170"/>
+    <rect class="head" width="230" height="28"/>
+    <text class="headText" x="10" y="19">users</text>
+    <text class="field pk" x="10" y="50">user_id PK</text>
+    <text class="field" x="10" y="72">first_name, last_name</text>
+    <text class="field" x="10" y="94">email</text>
+    <text class="field" x="10" y="116">password_hash</text>
+    <text class="field" x="10" y="138">role_id FK, status</text>
+    <text class="field" x="10" y="160">created_at, updated_at</text>
+  </g>
+
+  <!-- Middle tables -->
+  <g transform="translate(920 60)">
+    <rect class="table" width="230" height="88"/>
+    <rect class="head" width="230" height="28"/>
+    <text class="headText" x="10" y="19">book_authors</text>
+    <text class="field pk" x="10" y="50">book_id PK/FK</text>
+    <text class="field pk" x="10" y="72">author_id PK/FK</text>
+  </g>
+
+  <g transform="translate(920 200)">
+    <rect class="table" width="230" height="88"/>
+    <rect class="head" width="230" height="28"/>
+    <text class="headText" x="10" y="19">book_categories</text>
+    <text class="field pk" x="10" y="50">book_id PK/FK</text>
+    <text class="field pk" x="10" y="72">category_id PK/FK</text>
+  </g>
+
+  <g transform="translate(920 340)">
+    <rect class="table" width="230" height="132"/>
+    <rect class="head" width="230" height="28"/>
+    <text class="headText" x="10" y="19">copies</text>
+    <text class="field pk" x="10" y="50">copy_id PK</text>
+    <text class="field" x="10" y="72">book_id FK</text>
+    <text class="field" x="10" y="94">barcode</text>
+    <text class="field" x="10" y="116">status, copy_condition</text>
+    <text class="field" x="10" y="138">acquired_at</text>
+  </g>
+
+  <g transform="translate(920 500)">
+    <rect class="table" width="230" height="170"/>
+    <rect class="head" width="230" height="28"/>
+    <text class="headText" x="10" y="19">price_history</text>
+    <text class="field pk" x="10" y="50">price_history_id PK</text>
+    <text class="field" x="10" y="72">book_id FK</text>
+    <text class="field" x="10" y="94">old/new purchase_price</text>
+    <text class="field" x="10" y="116">old/new rental_price</text>
+    <text class="field" x="10" y="138">changed_by FK</text>
+    <text class="field" x="10" y="160">changed_at, reason</text>
+  </g>
+
+  <g transform="translate(920 720)">
+    <rect class="table" width="230" height="160"/>
+    <rect class="head" width="230" height="28"/>
+    <text class="headText" x="10" y="19">sales</text>
+    <text class="field pk" x="10" y="50">sale_id PK</text>
+    <text class="field" x="10" y="72">user_id FK</text>
+    <text class="field" x="10" y="94">sale_date, total_amount</text>
+    <text class="field" x="10" y="116">status, payment_method</text>
+    <text class="field" x="10" y="138">card_holder, card_last4</text>
+    <text class="field" x="10" y="160">payment_reference</text>
+  </g>
+
+  <g transform="translate(920 920)">
+    <rect class="table" width="230" height="140"/>
+    <rect class="head" width="230" height="28"/>
+    <text class="headText" x="10" y="19">loans</text>
+    <text class="field pk" x="10" y="50">loan_id PK</text>
+    <text class="field" x="10" y="72">user_id FK</text>
+    <text class="field" x="10" y="94">loan_date, due_date</text>
+    <text class="field" x="10" y="116">return_date, status</text>
+    <text class="field" x="10" y="138">rental_fee</text>
+  </g>
+
+  <g transform="translate(920 1080)">
+    <rect class="table" width="230" height="104"/>
+    <rect class="head" width="230" height="28"/>
+    <text class="headText" x="10" y="19">carts</text>
+    <text class="field pk" x="10" y="50">cart_id PK</text>
+    <text class="field" x="10" y="72">user_id FK, status</text>
+    <text class="field" x="10" y="94">created_at, updated_at</text>
+  </g>
+
+  <!-- Right detail tables -->
+  <g transform="translate(1390 60)">
+    <rect class="table" width="250" height="104"/>
+    <rect class="head" width="250" height="28"/>
+    <text class="headText" x="10" y="19">sale_items</text>
+    <text class="field pk" x="10" y="50">sale_item_id PK</text>
+    <text class="field" x="10" y="72">sale_id FK, book_id FK</text>
+    <text class="field" x="10" y="94">quantity, unit_price</text>
+  </g>
+
+  <g transform="translate(1390 210)">
+    <rect class="table" width="250" height="124"/>
+    <rect class="head" width="250" height="28"/>
+    <text class="headText" x="10" y="19">loan_items</text>
+    <text class="field pk" x="10" y="50">loan_item_id PK</text>
+    <text class="field" x="10" y="72">loan_id FK</text>
+    <text class="field" x="10" y="94">copy_id FK, book_id FK</text>
+    <text class="field" x="10" y="116">quantity</text>
+  </g>
+
+  <g transform="translate(1390 370)">
+    <rect class="table" width="250" height="150"/>
+    <rect class="head" width="250" height="28"/>
+    <text class="headText" x="10" y="19">stock_movements</text>
+    <text class="field pk" x="10" y="50">movement_id PK</text>
+    <text class="field" x="10" y="72">book_id FK, copy_id FK</text>
+    <text class="field" x="10" y="94">quantity, movement_type</text>
+    <text class="field" x="10" y="116">movement_date</text>
+    <text class="field" x="10" y="138">note</text>
+  </g>
+
+  <g transform="translate(1390 545)">
+    <rect class="table" width="250" height="124"/>
+    <rect class="head" width="250" height="28"/>
+    <text class="headText" x="10" y="19">cart_items</text>
+    <text class="field pk" x="10" y="50">cart_item_id PK</text>
+    <text class="field" x="10" y="72">cart_id FK, book_id FK</text>
+    <text class="field" x="10" y="94">quantity</text>
+    <text class="field" x="10" y="116">item_type</text>
+  </g>
+
+  <g transform="translate(1390 700)">
+    <rect class="table" width="250" height="190"/>
+    <rect class="head" width="250" height="28"/>
+    <text class="headText" x="10" y="19">notifications</text>
+    <text class="field pk" x="10" y="50">notification_id PK</text>
+    <text class="field" x="10" y="72">user_id FK</text>
+    <text class="field" x="10" y="94">type, title, message</text>
+    <text class="field" x="10" y="116">related_book_id FK</text>
+    <text class="field" x="10" y="138">related_sale_id FK</text>
+    <text class="field" x="10" y="160">related_loan_id FK</text>
+    <text class="field" x="10" y="182">is_read, created_at, read_at</text>
+  </g>
+
+  <g transform="translate(1390 920)">
+    <rect class="table" width="250" height="132"/>
+    <rect class="head" width="250" height="28"/>
+    <text class="headText" x="10" y="19">reviews</text>
+    <text class="field pk" x="10" y="50">review_id PK</text>
+    <text class="field" x="10" y="72">user_id FK</text>
+    <text class="field" x="10" y="94">book_id FK</text>
+    <text class="field" x="10" y="116">rating, comment, created_at</text>
+  </g>
+
+  <g transform="translate(1390 1080)">
+    <rect class="table" width="250" height="124"/>
+    <rect class="head" width="250" height="28"/>
+    <text class="headText" x="10" y="19">reservations</text>
+    <text class="field pk" x="10" y="50">reservation_id PK</text>
+    <text class="field" x="10" y="72">user_id FK, book_id FK</text>
+    <text class="field" x="10" y="94">reserved_at, expires_at</text>
+    <text class="field" x="10" y="116">status</text>
+  </g>
+</svg>

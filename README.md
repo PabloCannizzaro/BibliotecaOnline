@@ -149,7 +149,7 @@ bd/migration_notifications_and_card_payments.sql
 
 ## DER
 
-![DER Biblioteca Digital actualizado](bd/DER_BIBLIOTECAONLINE_ACTUALIZADO.svg)
+![DER Biblioteca Digital actualizado](bd/DER.png)
 
 # Arquitectura del Sistema
 

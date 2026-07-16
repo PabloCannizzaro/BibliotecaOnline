@@ -123,6 +123,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Error interno en el servidor" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor iniciado en puerto ${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Servidor iniciado en 0.0.0.0:${PORT}`);
 });

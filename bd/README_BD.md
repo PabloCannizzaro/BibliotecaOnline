@@ -2,46 +2,46 @@
 
 ## Importacion
 
-Estos scripts no ejecutan `CREATE DATABASE` ni `USE`.
-La base debe estar seleccionada antes de importarlos, usando el nombre real configurado en `DB_NAME`.
-Esto evita errores en bases administradas como Aiven o Railway, donde la base ya existe.
+1. Ejecutar `schema_reparado.sql` en MySQL/Aiven para crear tablas, claves e indices.
+2. Ejecutar `seed_reparado.sql` despues del esquema para cargar datos de prueba.
+3. Ejecutar `queries_test.sql` para validar consultas principales.
 
-Orden correcto:
+Si la base ya existe antes de estos cambios, ejecutar una sola vez:
 
-1. `schema_final.sql`
-2. `seed_final.sql`
+```sql
+bd/migration_notifications_and_card_payments.sql
+```
+
+La migracion agrega metadatos no sensibles de pago en `sales` y la tabla `notifications`.
+No se almacena numero completo de tarjeta ni CVV.
+
+## Orden correcto
+
+1. `schema_reparado.sql`
+2. `seed_reparado.sql`
 3. `queries_test.sql`
 
-Ejemplo con cliente MySQL/MariaDB:
-
-```bash
-mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p "$DB_NAME" < bd/schema_final.sql
-mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p "$DB_NAME" < bd/seed_final.sql
-mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p "$DB_NAME" < bd/queries_test.sql
-```
+Para bases existentes: ejecutar primero `migration_notifications_and_card_payments.sql` y luego desplegar el backend actualizado.
 
 ## Variables del backend
 
-El backend usa `mysql2/promise` y no define valores locales por defecto.
-Configurar siempre:
+El backend no usa valores locales por defecto para la base. Configurar siempre:
 
 ```env
-DB_HOST=HOST_DE_MYSQL
-DB_PORT=3306
-DB_USER=USUARIO
-DB_PASSWORD=PASSWORD
-DB_NAME=NOMBRE_DE_BASE_EXISTENTE
+DB_HOST=bookonline00-114-pmccole14-ecdc.d.aivencloud.com
+DB_PORT=21861
+DB_USER=avnadmin
+DB_PASSWORD=REEMPLAZAR_PASSWORD
+DB_NAME=biblioteca_digital
 DB_SSL_CA=./certs/ca.pem
-JWT_SECRET=CAMBIAR_EN_PRODUCCION
+JWT_SECRET=REEMPLAZAR_JWT_SECRET
 ```
 
-En Railway se puede usar `DB_SSL_CA_CONTENT` con el contenido completo del certificado CA en lugar de `DB_SSL_CA`.
+En Railway usar `DB_SSL_CA_CONTENT` con el contenido completo del certificado CA en lugar de `DB_SSL_CA`.
 
 ## Datos de prueba
 
-`seed_final.sql` carga roles, usuarios, autores, editoriales, categorias, libros, ejemplares, ventas, pagos, prestamos, movimientos de stock, reservas, carritos, resenas y notificaciones.
-
-Los usuarios del seed usan hashes bcrypt, no contrasenas en texto plano. Credenciales demo documentadas:
+Los usuarios del seed usan hashes bcrypt, no contrasenas en texto plano. Credenciales demo:
 
 - `admin@example.com` / `admin1234`
 - `valeria@example.com` / `pass1234`

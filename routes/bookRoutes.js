@@ -55,7 +55,7 @@ router.get("/", async (req, res) => {
         p.name AS publisher_name,
         GROUP_CONCAT(DISTINCT a.name SEPARATOR ', ') AS authors,
         GROUP_CONCAT(DISTINCT c.name SEPARATOR ', ') AS categories,
-        COUNT(DISTINCT CASE WHEN cp.status = 'available' THEN cp.copy_id END) AS available_copies
+        COALESCE(SUM(CASE WHEN cp.status = 'available' THEN 1 ELSE 0 END), 0) AS available_copies
       FROM books b
       LEFT JOIN publishers p ON b.publisher_id = p.publisher_id
       LEFT JOIN book_authors ba ON b.book_id = ba.book_id

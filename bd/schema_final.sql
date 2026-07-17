@@ -1,17 +1,16 @@
--- Biblioteca Digital: esquema completo de base de datos.
--- Ejecutar sobre la base seleccionada por DB_NAME. No crea ni selecciona
--- una base hardcodeada para mantener compatibilidad con Aiven/Railway.
--- Compatible con MySQL/MariaDB, InnoDB y utf8mb4.
+-- Biblioteca Digital: esquema completo de base de datos
+-- Archivo reparado: se reemplazó condition por copy_condition y TINYINT(1) por TINYINT UNSIGNED
+-- Base de datos diseñada para MySQL/MariaDB
 
-SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS biblioteca_digital CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE biblioteca_digital;
 
 -- Roles de usuario: administradores y usuarios regulares.
 CREATE TABLE IF NOT EXISTS roles (
   role_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  role_name VARCHAR(32) NOT NULL,
-  description VARCHAR(128) NULL,
-  UNIQUE KEY ux_roles_role_name (role_name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  role_name VARCHAR(32) NOT NULL UNIQUE,
+  description VARCHAR(128) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Usuarios del sistema.
 CREATE TABLE IF NOT EXISTS users (
@@ -26,11 +25,8 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (role_id) REFERENCES roles(role_id)
     ON UPDATE CASCADE
-    ON DELETE RESTRICT,
-  UNIQUE KEY ux_users_email (email),
-  INDEX ix_users_role (role_id),
-  INDEX ix_users_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Autores con información básica.
 CREATE TABLE IF NOT EXISTS authors (
@@ -39,24 +35,22 @@ CREATE TABLE IF NOT EXISTS authors (
   biography TEXT NULL,
   country VARCHAR(60) NULL,
   UNIQUE KEY ux_authors_name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Editoriales (publishers).
 CREATE TABLE IF NOT EXISTS publishers (
   publisher_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(120) NOT NULL,
+  name VARCHAR(120) NOT NULL UNIQUE,
   website VARCHAR(200) NULL,
-  country VARCHAR(60) NULL,
-  UNIQUE KEY ux_publishers_name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  country VARCHAR(60) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Categorías de libros.
 CREATE TABLE IF NOT EXISTS categories (
   category_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(80) NOT NULL,
-  description VARCHAR(180) NULL,
-  UNIQUE KEY ux_categories_name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  name VARCHAR(80) NOT NULL UNIQUE,
+  description VARCHAR(180) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Libros principales.
 CREATE TABLE IF NOT EXISTS books (
@@ -74,14 +68,9 @@ CREATE TABLE IF NOT EXISTS books (
   FOREIGN KEY (publisher_id) REFERENCES publishers(publisher_id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  CHECK (purchase_price >= 0),
-  CHECK (rental_price >= 0),
-  CHECK (stock_minimum >= 0),
-  CHECK (is_active IN (0, 1)),
-  INDEX ix_books_publisher (publisher_id),
   INDEX ix_books_title (title),
   INDEX ix_books_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Libros autores: relación muchos a muchos.
 CREATE TABLE IF NOT EXISTS book_authors (
@@ -93,9 +82,8 @@ CREATE TABLE IF NOT EXISTS book_authors (
     ON DELETE CASCADE,
   FOREIGN KEY (author_id) REFERENCES authors(author_id)
     ON UPDATE CASCADE
-    ON DELETE CASCADE,
-  INDEX ix_book_authors_author (author_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Libros categorías: relación muchos a muchos.
 CREATE TABLE IF NOT EXISTS book_categories (
@@ -107,9 +95,8 @@ CREATE TABLE IF NOT EXISTS book_categories (
     ON DELETE CASCADE,
   FOREIGN KEY (category_id) REFERENCES categories(category_id)
     ON UPDATE CASCADE
-    ON DELETE CASCADE,
-  INDEX ix_book_categories_category (category_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Ejemplares individuales de cada libro.
 CREATE TABLE IF NOT EXISTS copies (
@@ -123,8 +110,8 @@ CREATE TABLE IF NOT EXISTS copies (
     ON UPDATE CASCADE
     ON DELETE CASCADE,
   INDEX ix_copies_status (status),
-  INDEX ix_copies_book_status (book_id, status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  INDEX ix_copies_book (book_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Historial de cambios de precios de cada libro.
 CREATE TABLE IF NOT EXISTS price_history (
@@ -143,13 +130,9 @@ CREATE TABLE IF NOT EXISTS price_history (
   FOREIGN KEY (changed_by) REFERENCES users(user_id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  CHECK (old_purchase_price >= 0),
-  CHECK (new_purchase_price >= 0),
-  CHECK (old_rental_price >= 0),
-  CHECK (new_rental_price >= 0),
   INDEX ix_price_history_book (book_id),
   INDEX ix_price_history_changed_by (changed_by)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Ventas realizadas por usuarios normales.
 CREATE TABLE IF NOT EXISTS sales (
@@ -165,11 +148,10 @@ CREATE TABLE IF NOT EXISTS sales (
   FOREIGN KEY (user_id) REFERENCES users(user_id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  CHECK (total_amount >= 0),
   INDEX ix_sales_user (user_id),
   INDEX ix_sales_date (sale_date),
-  UNIQUE KEY ux_sales_payment_reference (payment_reference)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  INDEX ix_sales_payment_reference (payment_reference)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Detalle de cada venta.
 CREATE TABLE IF NOT EXISTS sale_items (
@@ -184,11 +166,9 @@ CREATE TABLE IF NOT EXISTS sale_items (
   FOREIGN KEY (book_id) REFERENCES books(book_id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  CHECK (quantity > 0),
-  CHECK (unit_price >= 0),
   INDEX ix_sale_items_sale (sale_id),
   INDEX ix_sale_items_book (book_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Préstamos y alquileres.
 CREATE TABLE IF NOT EXISTS loans (
@@ -202,13 +182,10 @@ CREATE TABLE IF NOT EXISTS loans (
   FOREIGN KEY (user_id) REFERENCES users(user_id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  CHECK (rental_fee >= 0),
-  CHECK (due_date >= loan_date),
-  CHECK (return_date IS NULL OR return_date >= loan_date),
   INDEX ix_loans_user (user_id),
   INDEX ix_loans_status (status),
   INDEX ix_loans_due_date (due_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Detalle del préstamo.
 CREATE TABLE IF NOT EXISTS loan_items (
@@ -226,11 +203,9 @@ CREATE TABLE IF NOT EXISTS loan_items (
   FOREIGN KEY (book_id) REFERENCES books(book_id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  CHECK (quantity > 0),
   INDEX ix_loan_items_loan (loan_id),
-  INDEX ix_loan_items_copy (copy_id),
-  INDEX ix_loan_items_book (book_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  INDEX ix_loan_items_copy (copy_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Reseñas de usuarios sobre libros.
 CREATE TABLE IF NOT EXISTS reviews (
@@ -249,7 +224,7 @@ CREATE TABLE IF NOT EXISTS reviews (
   CHECK (rating BETWEEN 1 AND 5),
   INDEX ix_reviews_book (book_id),
   INDEX ix_reviews_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Movimientos de stock para auditoría.
 CREATE TABLE IF NOT EXISTS stock_movements (
@@ -266,10 +241,8 @@ CREATE TABLE IF NOT EXISTS stock_movements (
   FOREIGN KEY (copy_id) REFERENCES copies(copy_id)
     ON UPDATE CASCADE
     ON DELETE SET NULL,
-  INDEX ix_stock_movements_book (book_id),
-  INDEX ix_stock_movements_copy (copy_id),
-  INDEX ix_stock_movements_type_date (movement_type, movement_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  INDEX ix_stock_movements_book (book_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Reservas llenan el circuito de biblioteca.
 CREATE TABLE IF NOT EXISTS reservations (
@@ -286,9 +259,8 @@ CREATE TABLE IF NOT EXISTS reservations (
     ON UPDATE CASCADE
     ON DELETE CASCADE,
   INDEX ix_reservations_user (user_id),
-  INDEX ix_reservations_book (book_id),
-  INDEX ix_reservations_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  INDEX ix_reservations_book (book_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Carrito de compras con detalles.
 CREATE TABLE IF NOT EXISTS carts (
@@ -301,7 +273,7 @@ CREATE TABLE IF NOT EXISTS carts (
     ON UPDATE CASCADE
     ON DELETE CASCADE,
   INDEX ix_carts_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS cart_items (
   cart_item_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -315,10 +287,8 @@ CREATE TABLE IF NOT EXISTS cart_items (
   FOREIGN KEY (book_id) REFERENCES books(book_id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  CHECK (quantity > 0),
-  INDEX ix_cart_items_cart (cart_id),
-  INDEX ix_cart_items_book (book_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  INDEX ix_cart_items_cart (cart_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Notificaciones persistentes para acciones del usuario.
 CREATE TABLE IF NOT EXISTS notifications (
@@ -345,10 +315,6 @@ CREATE TABLE IF NOT EXISTS notifications (
   FOREIGN KEY (related_loan_id) REFERENCES loans(loan_id)
     ON UPDATE CASCADE
     ON DELETE SET NULL,
-  CHECK (is_read IN (0, 1)),
   INDEX ix_notifications_user_read (user_id, is_read),
-  INDEX ix_notifications_created_at (created_at),
-  INDEX ix_notifications_related_book (related_book_id),
-  INDEX ix_notifications_related_sale (related_sale_id),
-  INDEX ix_notifications_related_loan (related_loan_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  INDEX ix_notifications_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

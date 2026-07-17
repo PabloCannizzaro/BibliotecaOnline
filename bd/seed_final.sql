@@ -1,5 +1,5 @@
--- Ejecutar sobre la base seleccionada por DB_NAME, despues de schema_final.sql.
-SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+SET NAMES utf8mb4;
+USE biblioteca_digital;
 
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE notifications;
@@ -117,21 +117,21 @@ INSERT INTO copies (book_id, barcode, status, copy_condition, acquired_at) VALUE
 (1, 'CP-0001-04', 'available', 'good', NOW()),
 (2, 'CP-0002-01', 'available', 'new', NOW()),
 (2, 'CP-0002-02', 'available', 'good', NOW()),
-(2, 'CP-0002-03', 'sold', 'good', NOW() - INTERVAL 10 DAY),
+(2, 'CP-0002-03', 'loaned', 'good', NOW() - INTERVAL 10 DAY),
 (3, 'CP-0003-01', 'available', 'new', NOW()),
 (3, 'CP-0003-02', 'available', 'good', NOW()),
 (3, 'CP-0003-03', 'sold', 'good', NOW() - INTERVAL 30 DAY),
 (4, 'CP-0004-01', 'available', 'good', NOW()),
 (4, 'CP-0004-02', 'available', 'good', NOW()),
-(4, 'CP-0004-03', 'available', 'good', NOW() - INTERVAL 25 DAY),
+(4, 'CP-0004-03', 'loaned', 'good', NOW() - INTERVAL 25 DAY),
 (5, 'CP-0005-01', 'available', 'new', NOW()),
-(5, 'CP-0005-02', 'available', 'good', NOW() - INTERVAL 60 DAY),
+(5, 'CP-0005-02', 'sold', 'good', NOW() - INTERVAL 60 DAY),
 (5, 'CP-0005-03', 'available', 'good', NOW()),
 (6, 'CP-0006-01', 'available', 'good', NOW()),
 (6, 'CP-0006-02', 'reserved', 'good', NOW()),
 (6, 'CP-0006-03', 'available', 'good', NOW()),
 (7, 'CP-0007-01', 'available', 'good', NOW()),
-(7, 'CP-0007-02', 'available', 'good', NOW() - INTERVAL 20 DAY),
+(7, 'CP-0007-02', 'sold', 'good', NOW() - INTERVAL 20 DAY),
 (7, 'CP-0007-03', 'available', 'good', NOW()),
 (8, 'CP-0008-01', 'available', 'good', NOW()),
 (8, 'CP-0008-02', 'available', 'good', NOW()),
@@ -139,12 +139,12 @@ INSERT INTO copies (book_id, barcode, status, copy_condition, acquired_at) VALUE
 (9, 'CP-0009-01', 'available', 'good', NOW()),
 (9, 'CP-0009-02', 'available', 'good', NOW()),
 (9, 'CP-0009-03', 'available', 'good', NOW()),
-(10, 'CP-0010-01', 'available', 'good', NOW() - INTERVAL 35 DAY),
+(10, 'CP-0010-01', 'sold', 'good', NOW() - INTERVAL 35 DAY),
 (10, 'CP-0010-02', 'available', 'good', NOW()),
 (10, 'CP-0010-03', 'available', 'good', NOW()),
 (11, 'CP-0011-01', 'available', 'good', NOW()),
 (11, 'CP-0011-02', 'available', 'good', NOW()),
-(11, 'CP-0011-03', 'available', 'good', NOW() - INTERVAL 12 DAY),
+(11, 'CP-0011-03', 'sold', 'good', NOW() - INTERVAL 12 DAY),
 (12, 'CP-0012-01', 'available', 'good', NOW()),
 (12, 'CP-0012-02', 'available', 'good', NOW()),
 (12, 'CP-0012-03', 'available', 'good', NOW()),
@@ -158,13 +158,13 @@ INSERT INTO copies (book_id, barcode, status, copy_condition, acquired_at) VALUE
 (15, 'CP-0015-02', 'available', 'good', NOW()),
 (16, 'CP-0016-01', 'available', 'good', NOW()),
 (16, 'CP-0016-02', 'available', 'good', NOW()),
-(16, 'CP-0016-03', 'available', 'good', NOW() - INTERVAL 17 DAY),
+(16, 'CP-0016-03', 'sold', 'good', NOW() - INTERVAL 17 DAY),
 (17, 'CP-0017-01', 'available', 'good', NOW()),
 (17, 'CP-0017-02', 'available', 'good', NOW()),
-(17, 'CP-0017-03', 'available', 'good', NOW() - INTERVAL 22 DAY),
+(17, 'CP-0017-03', 'sold', 'good', NOW() - INTERVAL 22 DAY),
 (18, 'CP-0018-01', 'available', 'good', NOW()),
 (18, 'CP-0018-02', 'available', 'good', NOW()),
-(19, 'CP-0019-01', 'available', 'good', NOW() - INTERVAL 18 DAY),
+(19, 'CP-0019-01', 'loaned', 'good', NOW() - INTERVAL 18 DAY),
 (19, 'CP-0019-02', 'available', 'good', NOW()),
 (20, 'CP-0020-01', 'available', 'good', NOW()),
 (20, 'CP-0020-02', 'available', 'good', NOW()),
@@ -176,7 +176,7 @@ INSERT INTO copies (book_id, barcode, status, copy_condition, acquired_at) VALUE
 (23, 'CP-0023-02', 'available', 'good', NOW()),
 (24, 'CP-0024-01', 'available', 'good', NOW()),
 (24, 'CP-0024-02', 'available', 'good', NOW()),
-(25, 'CP-0025-01', 'available', 'good', NOW() - INTERVAL 40 DAY),
+(25, 'CP-0025-01', 'sold', 'good', NOW() - INTERVAL 40 DAY),
 (25, 'CP-0025-02', 'available', 'good', NOW()),
 (26, 'CP-0026-01', 'available', 'good', NOW()),
 (26, 'CP-0026-02', 'available', 'good', NOW()),
@@ -217,10 +217,10 @@ INSERT INTO price_history (book_id, old_purchase_price, new_purchase_price, old_
 (20, 60.00, 61.00, 11.50, 12.00, 2, NOW() - INTERVAL 18 DAY, 'Costo editorial actualizado');
 
 -- Ventas realizadas
-INSERT INTO sales (user_id, sale_date, total_amount, status, payment_method, card_holder, card_last4, payment_reference) VALUES
-(3, NOW() - INTERVAL 12 DAY, 55.00, 'completed', 'tarjeta', 'Santiago Perez', '4242', 'PAY-SEED-0001'),
-(4, NOW() - INTERVAL 9 DAY, 48.00, 'completed', 'tarjeta', 'Maria Rodriguez', '1111', 'PAY-SEED-0002'),
-(5, NOW() - INTERVAL 5 DAY, 72.00, 'completed', 'tarjeta', 'Lucas Fernandez', '0005', 'PAY-SEED-0003');
+INSERT INTO sales (user_id, sale_date, total_amount, status, payment_method) VALUES
+(3, NOW() - INTERVAL 12 DAY, 55.00, 'completed', 'tarjeta'),
+(4, NOW() - INTERVAL 9 DAY, 48.00, 'completed', 'tarjeta'),
+(5, NOW() - INTERVAL 5 DAY, 72.00, 'completed', 'tarjeta');
 
 INSERT INTO sale_items (sale_id, book_id, quantity, unit_price) VALUES
 (1, 1, 1, 55.00),
@@ -235,11 +235,11 @@ INSERT INTO loans (user_id, loan_date, due_date, return_date, status, rental_fee
 
 INSERT INTO loan_items (loan_id, copy_id, book_id, quantity) VALUES
 (1, 2, 1, 1),
-(2, 41, 14, 1),
-(3, 25, 8, 1);
+(2, 14, 14, 1),
+(3, 8, 8, 1);
 
-UPDATE copies SET status = 'loaned' WHERE copy_id IN (2, 41);
-UPDATE copies SET status = 'available' WHERE copy_id = 25;
+UPDATE copies SET status = 'loaned' WHERE copy_id IN (2, 14);
+UPDATE copies SET status = 'available' WHERE copy_id = 8;
 
 -- Reseñas de libros
 INSERT INTO reviews (user_id, book_id, rating, comment) VALUES
@@ -252,17 +252,16 @@ INSERT INTO reviews (user_id, book_id, rating, comment) VALUES
 -- Movimientos de stock de ejemplo
 INSERT INTO stock_movements (book_id, copy_id, quantity, movement_type, movement_date, note) VALUES
 (1, 2, 1, 'loan', NOW() - INTERVAL 8 DAY, 'Préstamo activo de ejemplo'),
-(14, 41, 1, 'loan', NOW() - INTERVAL 18 DAY, 'Préstamo vencido de ejemplo'),
-(8, 25, 1, 'return', NOW() - INTERVAL 9 DAY, 'Devolucion registrada en seed'),
+(14, 14, 1, 'loan', NOW() - INTERVAL 18 DAY, 'Préstamo vencido de ejemplo'),
 (1, NULL, 1, 'sale', NOW() - INTERVAL 12 DAY, 'Venta registrada en seed'),
 (2, NULL, 1, 'sale', NOW() - INTERVAL 9 DAY, 'Venta registrada en seed'),
 (3, NULL, 1, 'sale', NOW() - INTERVAL 5 DAY, 'Venta registrada en seed');
 
 -- Notificaciones de ejemplo
-INSERT INTO notifications (user_id, type, title, message, related_book_id, related_sale_id, related_loan_id, is_read, created_at, read_at) VALUES
-(3, 'purchase', 'Compra confirmada', 'Has comprado el libro La casa del faro.', 1, 1, NULL, 0, NOW() - INTERVAL 12 DAY, NULL),
-(4, 'purchase', 'Compra confirmada', 'Has comprado el libro Sombras de ciudad.', 2, 2, NULL, 1, NOW() - INTERVAL 9 DAY, NOW() - INTERVAL 8 DAY),
-(6, 'loan', 'Prestamo registrado', 'Has alquilado el libro La casa del faro.', 1, NULL, 1, 0, NOW() - INTERVAL 8 DAY, NULL);
+INSERT INTO notifications (user_id, type, title, message, related_book_id, related_sale_id, related_loan_id, is_read, created_at) VALUES
+(3, 'purchase', 'Compra confirmada', 'Has comprado el libro La casa del faro.', 1, 1, NULL, 0, NOW() - INTERVAL 12 DAY),
+(4, 'purchase', 'Compra confirmada', 'Has comprado el libro Sombras de ciudad.', 2, 2, NULL, 1, NOW() - INTERVAL 9 DAY),
+(6, 'loan', 'Prestamo registrado', 'Has alquilado el libro La casa del faro.', 1, NULL, 1, 0, NOW() - INTERVAL 8 DAY);
 
 -- Reservas de ejemplo
 INSERT INTO reservations (user_id, book_id, reserved_at, expires_at, status) VALUES

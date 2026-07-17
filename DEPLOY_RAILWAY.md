@@ -15,8 +15,8 @@ Alternativa si el boton no funciona: hacer deploy manual desde Railway Dashboard
 - Cuenta en Railway.
 - Proyecto subido a GitHub.
 - Base MySQL creada en Aiven.
-- Schema importado: `bd/schema_reparado.sql`.
-- Seed importado si queres datos demo: `bd/seed_reparado.sql`.
+- Schema importado: `bd/schema_final.sql`.
+- Seed importado si queres datos demo: `bd/seed_final.sql`.
 - Certificado CA de Aiven disponible en `certs/ca.pem`.
 - Password real de Aiven y un `JWT_SECRET` fuerte.
 
@@ -135,7 +135,7 @@ Revisar `DB_USER` y `DB_PASSWORD`. Confirmar que la password real no tenga espac
 
 ### Unknown database
 
-Revisar `DB_NAME` y confirmar que `schema_reparado.sql` fue importado en Aiven.
+Revisar `DB_NAME` y confirmar que `schema_final.sql` fue importado en la base indicada por esa variable.
 
 ### SSL error
 
@@ -172,4 +172,4 @@ Revisar `JWT_SECRET` y que existan tablas `users` y `roles`. El seed usa hashes 
 - `.env` no esta versionado.
 - `DB_PASSWORD` y `JWT_SECRET` no estan en el codigo.
 - `DB_SSL_CA_CONTENT` esta configurado en Railway.
-- La base tiene `schema_reparado.sql` y, si corresponde, `seed_reparado.sql`.
+- La base tiene `schema_final.sql` y, si corresponde, `seed_final.sql`.

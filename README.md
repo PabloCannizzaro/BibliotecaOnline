@@ -105,16 +105,15 @@ El sistema tambien incluye un panel administrativo para gestionar libros, precio
 | `styles.css` | Estilos visuales, responsive, modales y animaciones. |
 | `script.js` | Logica del frontend, consumo API, estado de sesion y rutas de UI. |
 | `assets/` | SVG locales de portadas y avatar. |
-| `bd/schema_reparado.sql` | Esquema completo de base de datos. |
-| `bd/seed_reparado.sql` | Datos demo. |
+| `bd/schema_final.sql` | Esquema completo de base de datos. |
+| `bd/seed_final.sql` | Datos demo. |
 | `bd/queries_test.sql` | Consultas de validacion. |
-| `bd/migration_notifications_and_card_payments.sql` | Migracion para bases existentes. |
 | `railway.json` | Configuracion de build/deploy en Railway. |
 | `.env.example` | Variables de entorno de referencia. |
 
 ## Base de Datos
 
-El esquema principal se encuentra en `bd/schema_reparado.sql`. La base se llama `biblioteca_digital` y contiene 20 tablas:
+El esquema principal se encuentra en `bd/schema_final.sql`. El nombre de la base se toma de `DB_NAME`; los scripts SQL no ejecutan `CREATE DATABASE` ni `USE` para evitar hardcodear una base en entornos administrados. Contiene 20 tablas:
 
 - `roles`
 - `users`
@@ -140,12 +139,6 @@ El esquema principal se encuentra en `bd/schema_reparado.sql`. La base se llama 
 La compra utiliza `sales`, `sale_items`, `copies`, `stock_movements` y `notifications`. El backend no guarda numero completo de tarjeta ni CVV; solo guarda `card_holder`, `card_last4` y `payment_reference`.
 
 Los prestamos utilizan `loans`, `loan_items`, `copies`, `stock_movements` y `notifications`.
-
-Para bases ya creadas antes de estos cambios, aplicar una vez:
-
-```sql
-bd/migration_notifications_and_card_payments.sql
-```
 
 ## DER
 
@@ -336,14 +329,8 @@ JWT_SECRET=REEMPLAZAR_JWT_SECRET
 Para una base nueva:
 
 ```text
-bd/schema_reparado.sql
-bd/seed_reparado.sql
-```
-
-Para una base existente que no tenga notificaciones ni campos de pago:
-
-```text
-bd/migration_notifications_and_card_payments.sql
+bd/schema_final.sql
+bd/seed_final.sql
 ```
 
 5. Iniciar la aplicacion:
